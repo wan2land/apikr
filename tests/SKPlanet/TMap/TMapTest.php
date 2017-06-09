@@ -49,7 +49,7 @@ class DistanceCalculatorTest extends TestCase
 
         static::assertGreaterThan(11767 * 0.9, $actual[0]);
         static::assertLessThan(11767 * 1.9, $actual[0]);
-
+        
         static::assertGreaterThan(157973 * 0.9, $actual[1]);
         static::assertLessThan(157973 * 1.9, $actual[1]);
 

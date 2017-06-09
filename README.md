@@ -10,4 +10,5 @@ API KR
 
 ## 제공하는 API 목록
 
-- [SKPlanet - TMap](src/SKPlanet/Tmap) - [(공식)](https://developers.skplanetx.com/apidoc/kor/tmap/)
+- SK Planet
+  - [T Map](src/SKPlanet/TMap/) : [공식사이트](https://developers.skplanetx.com/apidoc/kor/tmap/)
