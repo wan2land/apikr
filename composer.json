@@ -1,5 +1,12 @@
 {
     "name": "apikr/apikr",
+    "description": "Korean API Services assembly.",
+    "keywords": [
+        "api",
+        "rest",
+        "skplanet"
+    ],
+    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Apikr\\": "src/"
