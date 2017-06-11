@@ -1,6 +1,11 @@
 API KR
 ======
 
+[![Latest Stable Version](https://poser.pugx.org/apikr/apikr/v/stable.svg)](https://packagist.org/packages/apikr/apikr)
+[![Latest Unstable Version](https://poser.pugx.org/apikr/apikr/v/unstable.svg)](https://packagist.org/packages/apikr/apikr)
+[![Total Downloads](https://poser.pugx.org/apikr/apikr/downloads.svg)](https://packagist.org/packages/apikr/apikr)
+[![License](https://poser.pugx.org/apikr/apikr/license.svg)](https://packagist.org/packages/apikr/apikr)
+
 항상 똑같은거 반복해서 사용하는 API들, 한곳에 묶어 보고 싶었습니다.
 
 개인이 사용중인거 있으시다면 조금만 정리해서 올려주세요.
