@@ -81,9 +81,6 @@ use Psr\SimpleCache\CacheInterface;
  */
 class Seyfert
 {
-    const SEYFERT_DEV_HOST = 'https://stg5.paygate.net'; // 테스트 서버
-    const SEYFERT_PROD_HOST = 'https://v5.paygate.net	'; // 실서버
-
     /** @var \GuzzleHttp\Client */
     protected $client;
 
@@ -399,11 +396,11 @@ class Seyfert
 
     /**
      * @param string $method
-     * @param string $uri
+     * @param string $path
      * @param array $form
      * @return array
      */
-    protected function request($method, $uri, array $form = [])
+    public function request($method, $path, array $form = [])
     {
         $form = $form + [
                 '_method' => $method,
@@ -411,7 +408,7 @@ class Seyfert
             ];
 
         $encReq = AesCtr::encrypt('&' . http_build_query($form), $this->config->getKeyp());
-        $response = $this->client->request('GET', static::SEYFERT_DEV_HOST . $uri, [
+        $response = $this->client->request('GET', $this->config->getRequestUrl($path), [
             'query' => [
                 '_method' => $method,
                 'reqMemGuid' => $this->config->getGuid(),

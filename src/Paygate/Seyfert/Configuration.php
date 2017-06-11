@@ -13,7 +13,7 @@ class Configuration
     protected $keyp;
 
     /** @var bool */
-    protected $production = false;
+    protected $debug = true;
 
     public function __construct(array $attributes = [])
     {
@@ -46,7 +46,7 @@ class Configuration
      */
     public function getRequestUrl($path, array $queries = [])
     {
-        $url = ($this->production ? static::SEYFERT_PROD_HOST : static::SEYFERT_DEV_HOST)
+        $url = ($this->debug ? static::SEYFERT_DEV_HOST : static::SEYFERT_PROD_HOST)
             . '/' . ltrim($path, '/');
         if (count($queries)) {
             $url .= '?' . http_build_query($queries);
