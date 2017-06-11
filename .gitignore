@@ -2,3 +2,6 @@
 
 /composer.lock
 /vendor/
+
+# secret
+/tests/Paygate/Seyfert/dataset.php

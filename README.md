@@ -7,8 +7,9 @@ API KR
 
  - PHP 소스이고, 버전은 [지원하는 PHP 버전](https://en.wikipedia.org/wiki/PHP)을 사용합니다. 현재는 PHP 5.6 이상입니다. 
  - HTTP REST Api 경우는 반드시 Guzzle HTTP를 사용합니다.
-
+ - 네임스페이스는 `Apikr\회사이름\서비스이름`으로 해주세요.
+ 
 ## 제공하는 API 목록
 
-- SK Planet
-  - [T Map](src/SKPlanet/TMap/) : [공식사이트](https://developers.skplanetx.com/apidoc/kor/tmap/)
+- [SK Planet, T Map](src/SKPlanet/TMap/) : 지도 서비스
+- [Paygate, Seyfert](src/Paygate/Seyfert/) : 핀테크 플랫폼

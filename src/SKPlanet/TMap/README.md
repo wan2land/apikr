@@ -1,5 +1,7 @@
-APIKR - SK Planet, T-Map
-======
+SK Planet, T-Map
+================
+
+공식페이지 : [developers.skplanetx.com/apidoc/kor/tmap](https://developers.skplanetx.com/apidoc/kor/tmap)
 
 ## 사용법
 
