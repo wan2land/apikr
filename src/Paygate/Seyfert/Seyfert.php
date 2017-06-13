@@ -298,6 +298,11 @@ class Seyfert
             return;
         } elseif ($result['data']['status'] === 'CHECK_BNK_NM_DENIED') {
             throw new SeyfertException("예금주명 조회에 실패하였습니다.", SeyfertException::CODE_CHECK_BNK_NM_DENIED);
+        } elseif ($result['data']['status'] === 'CHECK_BNK_NM_NEED_REVIEW') {
+            throw new SeyfertException(
+                "예금주가 일치하지 않거나 예금주를 조회할 수 없습니다.",
+                SeyfertException::CODE_CHECK_BNK_NM_NEED_REVIEW
+            );
         } else {
             throw new SeyfertException(
                 "예금주명 조회 도중 에러({$result['data']['status']})가 발생하였습니다.",
