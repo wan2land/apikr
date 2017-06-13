@@ -1,6 +1,7 @@
 <?php
 namespace Apikr\Paygate\Seyfert;
 
+use Apikr\Paygate\Seyfert\Exception\SeyfertException;
 use Apikr\Paygate\Seyfert\Models\Transaction;
 use Closure;
 use Apikr\Paygate\Seyfert\Contracts\MemberAware;
@@ -257,20 +258,20 @@ class Seyfert
     /**
      * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
      * @param \Apikr\Paygate\Seyfert\Models\Account $account
-     * @return bool
+     * @return void
      */
     public function assignRealAccount(MemberAware $member, Account $account)
     {
-        if (!$this->assignRealAccountOnly($member, $account)) return false;
-        if (!$this->verifyRealAccountName($member)) return false;
-        return $this->verifyAccountOwner($member);
+        $this->assignRealAccountOnly($member, $account);
+        $this->verifyRealAccountName($member);
+        $this->verifyAccountOwner($member);
     }
 
     /**
      * @internal
      * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
      * @param \Apikr\Paygate\Seyfert\Models\Account $account
-     * @return bool
+     * @return void
      */
     public function assignRealAccountOnly(MemberAware $member, Account $account)
     {
@@ -280,13 +281,13 @@ class Seyfert
             'bnkCd' => $account->getBank()->getCode(),
             'cntryCd' => 'KOR',
         ]);
-        return $result['status'] === 'SUCCESS';
+        // return $result['status'] === 'SUCCESS';
     }
 
     /**
      * @internal
      * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
-     * @return bool
+     * @return void
      */
     public function verifyRealAccountName(MemberAware $member)
     {
@@ -294,28 +295,40 @@ class Seyfert
             'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
         ]);
         if ($result['data']['status'] === 'CHECK_BNK_NM_FINISHED') {
-            return true;
+            return;
+        } elseif ($result['data']['status'] === 'CHECK_BNK_NM_DENIED') {
+            throw new SeyfertException("예금주명 조회에 실패하였습니다.", SeyfertException::CODE_CHECK_BNK_NM_DENIED);
+        } else {
+            throw new SeyfertException(
+                "예금주명 조회 도중 에러({$result['data']['status']})가 발생하였습니다.",
+                SeyfertException::CODE_CHECK_BNK_NM_UNKNOWN
+            );
         }
-        return false;
     }
 
     /**
      * @internal 
      * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
-     * @return bool
+     * @return void
      */
     public function verifyAccountOwner(MemberAware $member)
     {
         $result = $this->request("POST", "/v5/transaction/seyfert/checkbankcode", [
             'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
         ]);
-        if ($result['data']['status'] === 'CHECK_BNK_CD_FINISHED') { // 이미 검증완료 된 케이스
-            return true;
-        }
         if ($result['data']['status'] === 'VRFY_BNK_CD_SENDING_1WON') { // 1원 보냈어요!
-            return true;
+            return;
         }
-        return false;
+        if ($result['data']['status'] === 'CHECK_BNK_CD_FINISHED') { // 이미 검증완료 된 케이스
+            throw new SeyfertException(
+                "이미 확인된 계좌입니다.",
+                SeyfertException::CODE_CHECK_BNK_CD_FINISHED
+            );
+        }
+        throw new SeyfertException(
+            "계좌 조회 도중 에러({$result['data']['status']})가 발생하였습니다.",
+            SeyfertException::CODE_CHECK_BNK_CD_UNKNOWN
+        );
     }
 
     /**
@@ -349,7 +362,7 @@ class Seyfert
      * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $from
      * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $to
      * @param int $amount
-     * @return bool
+     * @return void
      */
     public function transfer(MemberAware $from, MemberAware $to, $amount)
     {
@@ -359,7 +372,13 @@ class Seyfert
             'amount' => $amount,
             'crrncy' => 'KRW',
         ]);
-        return $result['data']['status'] === 'SFRT_TRNSFR_PND_TRYING';
+        if ($result['data']['status'] === 'SFRT_TRNSFR_PND_TRYING') {
+            return;
+        }
+        throw new SeyfertException(
+            "전송 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
+            SeyfertException::CODE_SFRT_TRNSFR_PND_UNKNOWN
+        );
     }
 
     /**
