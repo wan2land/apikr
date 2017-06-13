@@ -133,6 +133,34 @@ class Seyfert
         $result = $this->request("POST", '/v5a/member/createMember', $form);
         return new Member($result['data']['memGuid'], $name, $email, $phone);
     }
+
+    /**
+     * @param string $identifier
+     * @param array $attributes
+     * @return bool
+     */
+    public function updateMember($identifier, array $attributes = [])
+    {
+        $form = [];
+        if (array_key_exists('name', $attributes)) {
+            $form['fullname'] = $attributes['name'];
+            $form['nmLangCd'] = 'ko';
+        }
+        if (array_key_exists('email', $attributes)) {
+            $form['emailAddress'] = $attributes['email'];
+            $form['emailTp'] = 'PERSONAL';
+        }
+        if (array_key_exists('phone', $attributes)) {
+            $form['phoneNo'] = $attributes['phone'];
+            $form['phoneCntryCd'] = 'KOR';
+        }
+        if (count($form)) {
+            $form['dstMemGuid'] = $identifier;
+            $result = $this->request("PUT", '/v5a/member/allInfo', $form);
+            return $result['status'] === 'SUCCESS';
+        }
+        return false;
+    }
     
     /**
      * @param string $identifier
