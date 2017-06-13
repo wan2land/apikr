@@ -9,8 +9,10 @@ class SeyfertException extends RuntimeException
     const CODE_CHECK_BNK_CD_FINISHED = 201;
 
     // error
-    const CODE_CHECK_BNK_NM_DENIED = 401;
-    const CODE_CHECK_BNK_NM_NEED_REVIEW = 402;
+    const CODE_API_CLIENT_ERROR = 400;
+    const CODE_API_SERVER_ERROR = 401;
+    const CODE_CHECK_BNK_NM_DENIED = 402;
+    const CODE_CHECK_BNK_NM_NEED_REVIEW = 403;
     
     // unknown
     const CODE_CHECK_BNK_NM_UNKNOWN = 501;

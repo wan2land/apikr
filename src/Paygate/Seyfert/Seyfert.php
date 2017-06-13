@@ -34,7 +34,7 @@ use Psr\SimpleCache\CacheInterface;
  *   [X] Create Member with Bank Account(은행 계좌를 통한 멤버 생성) - /v5a/member/createMember?_method=POST
  *   [v] Create Member with Email(이메일을 통한 멤버 생성) - /v5a/member/createMember?_method=POST
  *   [v] Create Member with Mobile Phone (휴대폰 번호를 KEY값으로 하는 멤버의 생성) - /v5a/member/createMember?_method=POST
- *   [ ] Update All Information (멤버 정보의 수정) - /v5a/member/allInfo?_method=PUT
+ *   [v] Update All Information (멤버 정보의 수정) - /v5a/member/allInfo?_method=PUT
  *   [ ] Verify Email(이메일 검증) - /v5a/member/verify/email?_method=POST
  *   [ ] Create Member with Merchant's unique key (Merchant's unique key를 KEY값으로 하는 멤버의 생성) - /v5a/member/createMember?_method=POST
  * 
@@ -460,14 +460,21 @@ class Seyfert
             ];
 
         $encReq = AesCtr::encrypt('&' . http_build_query($form), $this->config->getKeyp());
-        $response = $this->client->request('GET', $this->config->getRequestUrl($path), [
-            'query' => [
-                '_method' => $method,
-                'reqMemGuid' => $this->config->getGuid(),
-                'encReq' => $encReq,
-            ],
-        ]);
-
+        try {
+            $response = $this->client->request('GET', $this->config->getRequestUrl($path), [
+                'query' => [
+                    '_method' => $method,
+                    'reqMemGuid' => $this->config->getGuid(),
+                    'encReq' => $encReq,
+                ],
+            ]);
+        } catch (ClientException $e) {
+            $result = json_decode($e->getResponse()->getBody(), true);
+            if (isset($result['data']['cdDesc'])) {
+                throw new SeyfertException($result['data']['cdDesc'] . "..", SeyfertException::CODE_API_CLIENT_ERROR);
+            }
+            throw $e;
+        }
         return json_decode($response->getBody()->__toString(), true);
     }
 
