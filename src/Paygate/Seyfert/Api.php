@@ -3,12 +3,9 @@ namespace Apikr\Paygate\Seyfert;
 
 use Apikr\Paygate\Seyfert\Crypt\AesCtr;
 use Apikr\Paygate\Seyfert\Exception\SeyfertException;
-use Apikr\Paygate\Seyfert\Models\Bank;
-use Closure;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use InvalidArgumentException;
-use Psr\SimpleCache\CacheInterface;
 
 /*
  * API 어디까지 완성했는가..
@@ -85,14 +82,10 @@ class Api
     /** @var \Apikr\Paygate\Seyfert\Configuration */
     protected $config;
     
-    /** @var \Psr\SimpleCache\CacheInterface */
-    protected $cache;
-
-    public function __construct(Client $client, Configuration $config, CacheInterface $cache = null)
+    public function __construct(Client $client, Configuration $config)
     {
         $this->client = $client;
         $this->config = $config;
-        $this->cache = $cache;
     }
 
     /**
@@ -185,32 +178,24 @@ class Api
      * 세이퍼드 충전용 가상 계좌.
      * 
      * @param string $purpose
-     * @return \Apikr\Paygate\Seyfert\Models\Bank[]
+     * @return \Apikr\Paygate\Seyfert\Result
      */
     public function getBanksForVirtualAccount($purpose = 'p2p')
     {
         // $purpose = "p2p"; // p2p, payment, remit, bitcoin
-        return $this->caching('seyfert.virtual_banks', function () use ($purpose) {
-            $result = $this->request('GET', "/v5/code/listOf/availableVABanks/{$purpose}/charge");
-            return array_map(function ($item) {
-                return new Bank($item['cdNm'], $item['bankCode']);
-            }, $result['data']);
-        });
+        $result = $this->request('GET', "/v5/code/listOf/availableVABanks/{$purpose}/charge");
+        return new Result($result);
     }
 
     /**
      * 세이퍼드 환불용 가상계좌
      * 
-     * @return \Apikr\Paygate\Seyfert\Models\Bank[]
+     * @return \Apikr\Paygate\Seyfert\Result
      */
     public function getBanksForRealAccount()
     {
-        return $this->caching('seyfert.real_banks', function () {
-            $result = $this->request('GET', "/v5/code/listOf/banks");
-            return array_map(function ($item) {
-                return new Bank($item['cdNm'], $item['cdKey']);
-            }, $result['data']);
-        });
+        $result = $this->request('GET', "/v5/code/listOf/banks");
+        return new Result($result);
     }
 
     /**
@@ -402,20 +387,11 @@ class Api
      */
     public function createVirtualAccount($guid, $bankCode)
     {
-        $cacheKey = "seyfert.va.{$bankCode}.{$guid}";
-        if ($this->cache && $this->cache->has($cacheKey)) {
-            return $this->cache->get($cacheKey);
-        }
         $result = $this->request("PUT", '/v5a/member/assignVirtualAccount/p2p', [
             'dstMemGuid' => $guid,
             'bnkCd' => $bankCode,
         ]);
-        $resultToReturn = new Result($result);
-        if ($this->cache) {
-            $ttl = floor($result['data']['info']['expireDt'] / 1000) - time() - 10 * 60;
-            $this->cache->set($cacheKey, $resultToReturn, (int) $ttl);
-        }
-        return $resultToReturn;
+        return new Result($result);
     }
 
     /**
@@ -486,23 +462,5 @@ class Api
     protected function getResultFromClientException(ClientException $e)
     {
         return json_decode($e->getResponse()->getBody()->__toString(), true);
-    }
-
-    /**
-     * @param string $cacheKey
-     * @param \Closure $resultHandler
-     * @param int $ttl
-     * @return mixed
-     */
-    protected function caching($cacheKey, Closure $resultHandler, $ttl = 1800)
-    {
-        if ($this->cache && $this->cache->has($cacheKey)) {
-            return $this->cache->get($cacheKey);
-        }
-        $result = $resultHandler();
-        if ($this->cache) {
-            $this->cache->set($cacheKey, $result, $ttl);
-        }
-        return $result;
     }
 }
