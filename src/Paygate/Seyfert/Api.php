@@ -1,16 +1,13 @@
 <?php
 namespace Apikr\Paygate\Seyfert;
 
-use Apikr\Paygate\Seyfert\Exception\SeyfertException;
-use Apikr\Paygate\Seyfert\Models\Transaction;
-use Closure;
-use Apikr\Paygate\Seyfert\Contracts\MemberAware;
 use Apikr\Paygate\Seyfert\Crypt\AesCtr;
-use Apikr\Paygate\Seyfert\Models\Account;
+use Apikr\Paygate\Seyfert\Exception\SeyfertException;
 use Apikr\Paygate\Seyfert\Models\Bank;
-use Apikr\Paygate\Seyfert\Models\Member;
+use Closure;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use InvalidArgumentException;
 use Psr\SimpleCache\CacheInterface;
 
 /*
@@ -42,15 +39,15 @@ use Psr\SimpleCache\CacheInterface;
  *   [X] Get Emails
  *   [X] Get Phones
  *   [v] Get Member Detail Information (멤버 상세 정보) - /v5a/member/privateInfo?_method=GET
- *   [v] Member Allinfo - /v5a/member/allInfo?_method=GET
+ *   [ ] Member Allinfo - /v5a/member/allInfo?_method=GET
  *   [v] Member Count (멤버 카운트) - /v5a/member/count?_method=GET
 
  * > Seyfert Transaction (세이퍼트 거래)
  *   [v] Inquire Seyfert Balance(세이퍼트 잔액 조회) - /v5/member/seyfert/inquiry/balance
  *   > Seyfert Pending Transfer (세이퍼트 펜딩 이체)
  *     [v] Seyfert Pending Transfer (세이퍼트 펜딩 이체)
- *     [ ] Seyfert Pending Transfer Release(세이퍼트 펜딩 해제)
- *     [ ] Seyfert Pending Cancel(세이퍼트 펜딩 이체 취소)
+ *     [v] Seyfert Pending Transfer Release(세이퍼트 펜딩 해제)
+ *     [v] Seyfert Pending Cancel(세이퍼트 펜딩 이체 취소)
  *     [ ] Seyfert Pending with PreAuth (90일 선인증 거래)
  *   [v] Seyfert Withdraw(세이퍼트 출금) - /v5/transaction/seyfert/withdraw?_method=POST
  *   > Seyfert Transfer (세이퍼트 에스크로 이체)
@@ -80,7 +77,7 @@ use Psr\SimpleCache\CacheInterface;
  *   [ ] Transaction List (거래목록)
  * 
  */
-class Seyfert
+class Api
 {
     /** @var \GuzzleHttp\Client */
     protected $client;
@@ -102,7 +99,7 @@ class Seyfert
      * @param string $name
      * @param string $email
      * @param string $phone
-     * @return \Apikr\Paygate\Seyfert\Models\Member
+     * @return \Apikr\Paygate\Seyfert\Result
      */
     public function createMember($name, $email = null, $phone = null)
     {
@@ -129,18 +126,18 @@ class Seyfert
                 'phoneCntryCd' => 'KOR',
             ];
         } else {
-            throw new \RuntimeException("email, phone 둘 중 반드시 한개 이상은 입력하셔야 합니다.");
+            throw new InvalidArgumentException("email, phone 둘 중 반드시 한개 이상은 입력하셔야 합니다.");
         }
         $result = $this->request("POST", '/v5a/member/createMember', $form);
-        return new Member($result['data']['memGuid'], $name, $email, $phone);
+        return new Result($result);
     }
 
     /**
-     * @param string $identifier
+     * @param string $guid
      * @param array $attributes
-     * @return bool
+     * @return \Apikr\Paygate\Seyfert\Result
      */
-    public function updateMember($identifier, array $attributes = [])
+    public function updateMember($guid, array $attributes = [])
     {
         $form = [];
         if (array_key_exists('name', $attributes)) {
@@ -156,35 +153,23 @@ class Seyfert
             $form['phoneCntryCd'] = 'KOR';
         }
         if (count($form)) {
-            $form['dstMemGuid'] = $identifier;
+            $form['dstMemGuid'] = $guid;
             $result = $this->request("PUT", '/v5a/member/allInfo', $form);
-            return $result['status'] === 'SUCCESS';
+            return new Result($result);
         }
-        return false;
+        throw new InvalidArgumentException('attributes에는 적어도 name, email, phone 중 하나는 있어야 합니다.');
     }
     
     /**
-     * @param string $identifier
-     * @return \Apikr\Paygate\Seyfert\Models\Member
+     * @param string $guid
+     * @return \Apikr\Paygate\Seyfert\Result
      */
-    public function getMember($identifier)
+    public function getMember($guid)
     {
-        try {
-            $result = $this->request("GET", '/v5a/member/privateInfo', [
-                'dstMemGuid' => $identifier,
-            ]);
-            return new Member(
-                $identifier,
-                isset($result['data']['result']['namesList'][0]['fullname'])
-                    ? $result['data']['result']['namesList'][0]['fullname'] : null,
-                isset($result['data']['result']['emailsList'][0]['emailAddrss'])
-                    ? $result['data']['result']['emailsList'][0]['emailAddrss'] : null,
-                isset($result['data']['result']['phonesList'][0]['phoneNo'])
-                    ? $result['data']['result']['phonesList'][0]['phoneNo'] : null
-            );
-        } catch (ClientException $e) {
-            return null;
-        }
+        $result = $this->request("GET", '/v5a/member/privateInfo', [
+            'dstMemGuid' => $guid,
+        ]);
+        return new Result($result);
     }
     
     /**
@@ -197,36 +182,8 @@ class Seyfert
     }
 
     /**
-     * @param int $page
-     * @param int $limit
-     * @return \Apikr\Paygate\Seyfert\Models\Member[]
-     */
-    public function retrieveMembers($page = 1, $limit = 10)
-    {
-        try {
-            $result = $this->request("GET", '/v5a/member/allInfo', [
-                'page' => $page,
-                'limit' => $limit,
-            ]);
-            return array_map(function ($member) {
-                return new Member(
-                    $member['guid'],
-                    $member['fullname'],
-                    $member['emailAddrss'],
-                    $member['phoneNo']
-                );
-            }, isset($result['data']['resultList']) ? $result['data']['resultList'] : []);
-        } catch (ClientException $e) {
-            $result = $this->getResultFromClientException($e);
-            if (isset($result['data']['cdKey']) && $result['data']['cdKey'] === 'NO_MEMBER') {
-                return [];
-            }
-            throw $e;
-        }
-    }
-
-    /**
      * 세이퍼드 충전용 가상 계좌.
+     * 
      * @param string $purpose
      * @return \Apikr\Paygate\Seyfert\Models\Bank[]
      */
@@ -243,6 +200,7 @@ class Seyfert
 
     /**
      * 세이퍼드 환불용 가상계좌
+     * 
      * @return \Apikr\Paygate\Seyfert\Models\Bank[]
      */
     public function getBanksForRealAccount()
@@ -256,194 +214,237 @@ class Seyfert
     }
 
     /**
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
-     * @param \Apikr\Paygate\Seyfert\Models\Account $account
-     * @return void
+     * @param string $guid
+     * @param string $bankCode
+     * @param string $accountNumber
+     * @return \Apikr\Paygate\Seyfert\Result
      */
-    public function assignRealAccount(MemberAware $member, Account $account)
+    public function assignRealAccount($guid, $bankCode, $accountNumber)
     {
-        $this->assignRealAccountOnly($member, $account);
-        $this->verifyRealAccountName($member);
-        $this->verifyAccountOwner($member);
+        $this->assignRealAccountOnly($guid, $bankCode, $accountNumber);
+        $this->verifyRealAccountName($guid);
+        return $this->verifyAccountOwner($guid);
     }
 
     /**
      * @internal
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
-     * @param \Apikr\Paygate\Seyfert\Models\Account $account
-     * @return void
+     * @param string $guid
+     * @param string $bankCode
+     * @param string $accountNumber
+     * @return \Apikr\Paygate\Seyfert\Result
      */
-    public function assignRealAccountOnly(MemberAware $member, Account $account)
+    public function assignRealAccountOnly($guid, $bankCode, $accountNumber)
     {
         $result = $this->request("POST", "/v5a/member/bnk", [
-            'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
-            'accntNo' => $account->getAccountNumber(),
-            'bnkCd' => $account->getBank()->getCode(),
+            'dstMemGuid' => $guid,
+            'bnkCd' => $bankCode,
+            'accntNo' => $accountNumber,
             'cntryCd' => 'KOR',
         ]);
-        // return $result['status'] === 'SUCCESS';
+        return new Result($result);
     }
 
     /**
      * @internal
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
-     * @return void
+     * @param string $guid
+     * @return \Apikr\Paygate\Seyfert\Result
      */
-    public function verifyRealAccountName(MemberAware $member)
+    public function verifyRealAccountName($guid)
     {
         $result = $this->request("POST", "/v5/transaction/seyfert/checkbankname", [
-            'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
+            'dstMemGuid' => $guid,
         ]);
         if ($result['data']['status'] === 'CHECK_BNK_NM_FINISHED') {
-            return;
+            return new Result($result);
         } elseif ($result['data']['status'] === 'CHECK_BNK_NM_DENIED') {
-            throw new SeyfertException("예금주명 조회에 실패하였습니다.", SeyfertException::CODE_CHECK_BNK_NM_DENIED);
+            throw new SeyfertException(
+                "예금주명 조회에 실패하였습니다.",
+                SeyfertException::CODE_CHECK_BNK_NM_DENIED,
+                $result
+            );
         } elseif ($result['data']['status'] === 'CHECK_BNK_NM_NEED_REVIEW') {
             throw new SeyfertException(
                 "예금주가 일치하지 않거나 예금주를 조회할 수 없습니다.",
-                SeyfertException::CODE_CHECK_BNK_NM_NEED_REVIEW
+                SeyfertException::CODE_CHECK_BNK_NM_NEED_REVIEW,
+                $result
             );
         } else {
             throw new SeyfertException(
                 "예금주명 조회 도중 에러({$result['data']['status']})가 발생하였습니다.",
-                SeyfertException::CODE_CHECK_BNK_NM_UNKNOWN
+                SeyfertException::CODE_CHECK_BNK_NM_UNKNOWN,
+                $result
             );
         }
     }
 
     /**
      * @internal 
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
-     * @return void
+     * @param string $guid
+     * @return \Apikr\Paygate\Seyfert\Result
      */
-    public function verifyAccountOwner(MemberAware $member)
+    public function verifyAccountOwner($guid)
     {
         $result = $this->request("POST", "/v5/transaction/seyfert/checkbankcode", [
-            'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
+            'dstMemGuid' => $guid,
         ]);
-        if ($result['data']['status'] === 'VRFY_BNK_CD_SENDING_1WON') { // 1원 보냈어요!
-            return;
-        }
-        if ($result['data']['status'] === 'CHECK_BNK_CD_FINISHED') { // 이미 검증완료 된 케이스
-            throw new SeyfertException(
-                "이미 확인된 계좌입니다.",
-                SeyfertException::CODE_CHECK_BNK_CD_FINISHED
-            );
+        // 1원 보냈어요! & 이미 검증완료 된 케이스
+        if ($result['data']['status'] === 'VRFY_BNK_CD_SENDING_1WON' 
+         || $result['data']['status'] === 'CHECK_BNK_CD_FINISHED') { // 이미 검증완료 된 케이스
+            return new Result($result);
         }
         throw new SeyfertException(
             "계좌 조회 도중 에러({$result['data']['status']})가 발생하였습니다.",
-            SeyfertException::CODE_CHECK_BNK_CD_UNKNOWN
+            SeyfertException::CODE_CHECK_BNK_CD_UNKNOWN,
+            $result
         );
     }
 
     /**
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
+     * @param string $guid
      * @return bool
      */
-    public function hasBankAccount(MemberAware $member)
+    public function hasBankAccount($guid)
     {
         $result = $this->request("POST", '/v5/transaction/seyfert/checkbankexistence', [
-            'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
+            'dstMemGuid' => $guid,
         ]);
         return $result['data']['status'] === 'CHECK_BNK_EXISTANCE_CHECKED'; // 실패시 CHECK_BNK_EXISTANCE_FAILED        
     }
 
     /**
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
+     * @param string $guid
      * @param int $amount
-     * @return bool
+     * @return \Apikr\Paygate\Seyfert\TransactionResult
      */
-    public function withdraw(MemberAware $member, $amount)
+    public function withdraw($guid, $amount)
     {
         $result = $this->request("POST", '/v5/transaction/seyfert/withdraw', [
-            'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
+            'dstMemGuid' => $guid,
             'amount' => $amount,
             'crrncy' => 'KRW',
         ]);
-        return $result['data']['status'] === 'SFRT_WITHDRAW_REQ_TRYING';
-    }
-
-    /**
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $from
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $to
-     * @param int $amount
-     * @return void
-     */
-    public function transfer(MemberAware $from, MemberAware $to, $amount)
-    {
-        $result = $this->request("POST", '/v5/transaction/seyfert/transferPending', [
-            'srcMemGuid' => $from->getSeyfertMemberIdentifier(),
-            'dstMemGuid' => $to->getSeyfertMemberIdentifier(),
-            'amount' => $amount,
-            'crrncy' => 'KRW',
-        ]);
-        if ($result['data']['status'] === 'SFRT_TRNSFR_PND_TRYING') {
-            return;
+        if ($result['data']['status'] === 'SFRT_WITHDRAW_REQ_TRYING') {
+            return new TransactionResult($result);
         }
         throw new SeyfertException(
-            "전송 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
-            SeyfertException::CODE_SFRT_TRNSFR_PND_UNKNOWN
+            "세피어트 출금 도중 에러({$result['data']['status']})가 발생하였습니다.",
+            SeyfertException::CODE_SFRT_WITHDRAW_UNKNOWN,
+            $result
         );
     }
 
     /**
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
-     * @param \Apikr\Paygate\Seyfert\Models\Bank $bank
-     * @return \Apikr\Paygate\Seyfert\Models\Account
+     * @param string $fromGuid
+     * @param string $toGuid
+     * @param int $amount
+     * @return \Apikr\Paygate\Seyfert\TransactionResult
      */
-    public function createVirtualAccount(MemberAware $member, Bank $bank)
+    public function transferPending($fromGuid, $toGuid, $amount)
     {
-        $cacheKey = 'seyfert.va.' . $bank->getCode() . '.' . $member->getSeyfertMemberIdentifier();
+        $result = $this->request("POST", '/v5/transaction/seyfert/transferPending', [
+            'srcMemGuid' => $fromGuid,
+            'dstMemGuid' => $toGuid,
+            'amount' => $amount,
+            'crrncy' => 'KRW',
+        ]);
+        if ($result['data']['status'] === 'SFRT_TRNSFR_PND_TRYING' || $result['data']['status'] === 'SFRT_TRNSFR_PND_AGRREED') {
+            return new TransactionResult($result);
+        }
+        throw new SeyfertException(
+            "전송 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
+            SeyfertException::CODE_SFRT_TRNSFR_PND_UNKNOWN,
+            $result
+        );
+    }
+
+    /**
+     * @param string $tid
+     * @return \Apikr\Paygate\Seyfert\TransactionResult
+     */
+    public function releasePending($tid)
+    {
+        $result = $this->request("POST", '/v5/transaction/pending/release', [
+            'parentTid' => $tid,
+        ]);
+        if ($result['data']['status'] === 'SFRT_TRNSFR_PND_RELEASED') {
+            return new TransactionResult($result);
+        }
+        throw new SeyfertException(
+            "펜딩 헤제 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
+            SeyfertException::CODE_SFRT_TRNSFR_PND_RELEASED_UNKNOWN,
+            $result
+        );
+    }
+
+    /**
+     * @param string $tid
+     * @return \Apikr\Paygate\Seyfert\TransactionResult
+     */
+    public function cancelPending($tid)
+    {
+        $result = $this->request("POST", '/v5/transaction/seyfertTransferPending/cancel', [
+            'parentTid' => $tid,
+        ]);
+        if ($result['data']['status'] === 'SFRT_TRNSFR_PND_CANCELED') {
+            return new TransactionResult($result);
+        }
+        throw new SeyfertException(
+            "펜딩 취소 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
+            SeyfertException::CODE_SFRT_TRNSFR_PND_CANCELED_UNKNOWN,
+            $result
+        );
+    }
+
+    /**
+     * @param string $guid
+     * @param string $bankCode
+     * @return \Apikr\Paygate\Seyfert\Result
+     */
+    public function createVirtualAccount($guid, $bankCode)
+    {
+        $cacheKey = "seyfert.va.{$bankCode}.{$guid}";
         if ($this->cache && $this->cache->has($cacheKey)) {
             return $this->cache->get($cacheKey);
         }
         $result = $this->request("PUT", '/v5a/member/assignVirtualAccount/p2p', [
-            'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
-            'bnkCd' => $bank->getCode(),
+            'dstMemGuid' => $guid,
+            'bnkCd' => $bankCode,
         ]);
-        $account = new Account($bank, $result['data']['accntNo']);
+        $resultToReturn = new Result($result);
         if ($this->cache) {
             $ttl = floor($result['data']['info']['expireDt'] / 1000) - time() - 10 * 60;
-            $this->cache->set($cacheKey, $account, (int) $ttl);
+            $this->cache->set($cacheKey, $resultToReturn, (int) $ttl);
         }
-        return $account;
+        return $resultToReturn;
     }
 
     /**
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
+     * @param string $guid
      * @return int
      */
-    public function getBalanceMoney(MemberAware $member)
+    public function getBalanceMoney($guid)
     {
         $result = $this->request("GET", '/v5/member/seyfert/inquiry/balance', [
-            'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
+            'dstMemGuid' => $guid,
             'crrncy' => 'KRW',
         ]);
         return (int)(isset($result['data']['moneyPair']['amount']) ? $result['data']['moneyPair']['amount'] : 0);
     }
 
     /**
-     * @param \Apikr\Paygate\Seyfert\Contracts\MemberAware $member
+     * @param string $guid
      * @param int $page
      * @param int $limit
-     * @return array|\Apikr\Paygate\Seyfert\Models\Transaction[]
+     * @return \Apikr\Paygate\Seyfert\Result
      */
-    public function retrieveTransactions(MemberAware $member, $page = 1, $limit = 10)
+    public function retrieveTransactions($guid, $page = 1, $limit = 10)
     {
         $result = $this->request("GET", '/v5a/admin/seyfertList', [
-            'dstMemGuid' => $member->getSeyfertMemberIdentifier(),
+            'dstMemGuid' => $guid,
             'page' => $page,
             'limit' => $limit,
         ]);
-        return array_map(function ($trans) {
-            return new Transaction(
-                $trans['tid'],
-                $trans['trnsctnSt'],
-                $trans['actcAmt'],
-                $trans['actcRsltAmt'],
-                floor($trans['createDt'] / 1000)
-            );
-        }, isset($result['data']['list']) ? $result['data']['list'] : []);
+        return new Result($result);
     }
 
     /**

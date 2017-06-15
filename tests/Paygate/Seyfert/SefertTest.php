@@ -3,15 +3,13 @@
 namespace Apikr\Paygate\Seyfert;
 
 use Apikr\Paygate\Seyfert\Models\Bank;
-use Apikr\Paygate\Seyfert\Models\Member;
-use Apikr\Paygate\Seyfert\Models\Transaction;
 use GuzzleHttp\Client;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Simple\ApcuCache;
 
-class SeyfertTest extends TestCase 
+class ApiTest extends TestCase 
 {
-    /** @var \Apikr\Paygate\Seyfert\Seyfert */
+    /** @var \Apikr\Paygate\Seyfert\Api */
     protected $seyfert;
     
     /** @var array */
@@ -23,13 +21,14 @@ class SeyfertTest extends TestCase
             static::markTestSkipped('test dataset is null');
         }
         $this->dataset = require __DIR__ . '/dataset.php';
-        $this->seyfert = new Seyfert(new Client(), new Configuration($this->dataset), new ApcuCache());
+        $this->seyfert = new Api(new Client(), new Configuration($this->dataset), new ApcuCache());
     }
 
     public function testCreateMember()
     {
-        $member = $this->seyfert->createMember('테스트', 'wan2land@gmail.com', '01049243213');
-        static::assertInstanceOf(Member::class, $member);
+        $result = $this->seyfert->createMember('테스트', 'wan2land@gmail.com', '01049243213');
+        // $guid = $result->search('data.memGuid');
+        static::assertInstanceOf(Result::class, $result);
     }
     
     public function testGetBanksForVirtualAccount()
@@ -50,46 +49,55 @@ class SeyfertTest extends TestCase
 
     public function testCreateVirtualAccount()
     {
-        $member = new Member($this->dataset['memguid']);
         $banks = $this->seyfert->getBanksForVirtualAccount();
 
-        $account = $this->seyfert->createVirtualAccount($member, $banks[0]);
+        $account = $this->seyfert->createVirtualAccount($this->dataset['memguid'], $banks[0]);
 
         static::assertEquals($account->getAccountNumber(), $account->getAccountNumber());
     }
     
     public function testHasRealAccount()
     {
-        $member = new Member($this->dataset['memguid']);
 
-        static::assertTrue($this->seyfert->hasBankAccount($member));
+        static::assertTrue($this->seyfert->hasBankAccount($this->dataset['memguid']));
     }
     
     public function testAssignRealAccount()
     {
-//        $member = new Member($this->dataset['memguid']);
-//        /** @var \Apikr\Paygate\Seyfert\Models\Bank $bank */
+////        /** @var \Apikr\Paygate\Seyfert\Models\Bank $bank */
 //        $bank = $this->seyfert->getBanksForRealAccount()[0];
 //        if (!$bank) {
 //            static::fail('!!');
 //        }
-//        $result = $this->seyfert->assignRealAccount($member, new Account($bank, 'some real account'));
+//        $result = $this->seyfert->assignRealAccount($this->dataset['memguid'], new Account($bank, 'some real account'));
 //        static::assertTrue($result);
     }
     
     public function testGetBalanceMoney() 
     {
-        $member = new Member($this->dataset['memguid']);
-        static::assertTrue(is_int($this->seyfert->getBalanceMoney($member)));
+        static::assertTrue(is_int($this->seyfert->getBalanceMoney($this->dataset['memguid'])));
     }
 
     public function testRetrieveTransactions()
     {
-        $member = new Member($this->dataset['memguid']);
-        $trans = $this->seyfert->retrieveTransactions($member);
+        $trans = $this->seyfert->retrieveTransactions($this->dataset['memguid']);
         
-        foreach ($trans as $tran) {
-            static::assertInstanceOf(Transaction::class, $tran);
-        }
+//        foreach ($trans as $tran) {
+//            static::assertInstanceOf(Transaction::class, $tran);
+//        }
+    }
+
+    /**
+     * d
+     */
+    public function testTransfer()
+    {
+//        $fr = new Member('GcyhPSbKhZBJLdF45HFDs4');
+//        $to = new Member('HsXUbJvEbrc485SB43odeo');
+//        $result = $this->seyfert->transferPending($fr, $to, 500);
+
+        $result = $this->seyfert->cancelPending('tai0h7');
+        print_r($result->getTransactionId());
+        print_r($result);
     }
 }
