@@ -4,4 +4,7 @@
 /vendor/
 
 # secret
+
+**/test.config.php
+
 /tests/Paygate/Seyfert/dataset.php
