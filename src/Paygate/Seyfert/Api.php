@@ -70,7 +70,7 @@ use InvalidArgumentException;
  *   [ ] 인증번호 재요청
  *
  * > Transaction Inquiry(거래 조회)
- *   [ ] Transaction Details (거래명세서)
+ *   [v] Transaction Details (거래명세서)
  *   [ ] Transaction List (거래목록)
  * 
  */
@@ -413,12 +413,24 @@ class Api
      * @param int $limit
      * @return \Apikr\Paygate\Seyfert\Result
      */
-    public function retrieveTransactions($guid, $page = 1, $limit = 10)
+    public function seyfertList($guid, $page = 1, $limit = 10)
     {
         $result = $this->request("GET", '/v5a/admin/seyfertList', [
             'dstMemGuid' => $guid,
             'page' => $page,
             'limit' => $limit,
+        ]);
+        return new Result($result);
+    }
+
+    /**
+     * @param array $tids
+     * @return \Apikr\Paygate\Seyfert\Result
+     */
+    public function transactionDetail(array $tids = [])
+    {
+        $result = $this->request("GET", '/v5a/admin/transaction/detail', [
+            'tidList' => implode(',', $tids),
         ]);
         return new Result($result);
     }
