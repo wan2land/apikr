@@ -28,7 +28,6 @@ class Api
         if (!$title) {
             $title = $this->config->title;
         }
-        $receiver = preg_replace('~[^\\d]~', '', $receiver);
         try {
             $form = [
                 'sender' => $this->escapeNumber($sender ? $sender : $this->config->sender),
@@ -38,12 +37,7 @@ class Api
             if ($this->config->debug) {
                 $form['testmode_yn'] = 'Y';
             }
-            return $this->request('', [
-                'sender' => $this->escapeNumber($sender ? $sender : $this->config->sender),
-                'receiver' => $this->escapeNumber($receiver),
-                'msg' => $text,
-                'testmode_yn' => $this->config->debug ? 'Y' : 'N',
-            ]);
+            return $this->request('', $form);
         } catch (RequestException $e) {
             throw new SmsDeliveryException($receiver, $text, $e);
         }
@@ -83,13 +77,13 @@ class Api
 
     /**
      * @param string $uri
-     * @param array $formParams
+     * @param array $form
      * @return \Apikr\Common\Result
      */
-    public function request($uri, array $formParams = [])
+    public function request($uri, array $form = [])
     {
         $response = $this->client->request('POST', $this->config->getRequestUrl($uri), [
-            'form_params' => $formParams + [
+            'form_params' => $form + [
                     'userid' => $this->config->id,
                     'key' => $this->config->apikey,
                 ],
