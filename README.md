@@ -19,6 +19,7 @@ API KR
 - [SK Planet, T Map](src/SKPlanet/TMap/) : 지도 서비스
 - [Paygate, Seyfert](src/Paygate/Seyfert/) : 핀테크 플랫폼
 - [Aligo, SMS](src/Aligo/Sms) : SMS 서비스
+- [API Store, SMS](src/ApiStore/Sms) : SMS 서비스
 
 ## 설치하기
 
