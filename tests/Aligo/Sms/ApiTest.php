@@ -34,7 +34,7 @@ class ApiTest extends TestCase
     public function testSendLms()
     {
         $text = sprintf("%s, 기~인메세지, ", date("n월 j일 H시 i분")) . str_repeat("우아앙", 50);
-        $result = $this->sms->send($this->config['testreceiver'], $text);
+        $result = $this->sms->send($this->config['testreceiver'], $text, '제목');
 
         static::assertInstanceOf(Result::class, $result);
         static::assertEquals('LMS', $result['msg_type']);

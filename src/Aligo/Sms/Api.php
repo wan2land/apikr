@@ -25,12 +25,10 @@ class Api
 
     public function send($receiver, $text, $title = null, $sender = null)
     {
-        if (!$title) {
-            $title = $this->config->title;
-        }
         try {
             $form = [
-                'sender' => $this->escapeNumber($sender ? $sender : $this->config->sender),
+                'title' => ($title ?: $this->config->title),
+                'sender' => $this->escapeNumber($sender ?: $this->config->sender),
                 'receiver' => $this->escapeNumber($receiver),
                 'msg' => $text,
             ];
