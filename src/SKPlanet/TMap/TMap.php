@@ -1,6 +1,7 @@
 <?php
 namespace Apikr\SKPlanet\TMap;
 
+use Apikr\Common\Result;
 use Apikr\SKPlanet\TMap\Contracts\SpatialPoint;
 use Apikr\SKPlanet\TMap\Exception\CannotCalculateException;
 use GuzzleHttp\Client;
@@ -35,12 +36,12 @@ class TMap
         if (!isset($result['features'])) {
             throw new CannotCalculateException('features 값이 없습니다.', CannotCalculateException::CODE_NO_EXISTS_FEATURES);
         }
-        if (isset($result['features'][0]['properties']['totalDistance'])) {
-            return $result['features'][0]['properties']['totalDistance'];
+        if ($totalDistance = $result->search('features[0].properties.totalDistance')) {
+            return $totalDistance;
         }
         $totalDistance = 0;
-        foreach ($result['features'] as $feature) {
-            $totalDistance += isset($feature['properties']['distance']) ? $feature['properties']['distance'] : 0;
+        foreach ($result->search('features[*].properties.distance') as $distance) {
+            $totalDistance += $distance;
         }
         return $totalDistance;
     }
@@ -89,31 +90,36 @@ class TMap
      * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $origin
      * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $dest
      * @param array $options
-     * @return array
+     * @return \Apikr\Common\Result
      */
     public function getRoutes(SpatialPoint $origin, SpatialPoint $dest, array $options = [])
     {
-        try {
-            $response = $this->client->post($this->config->getRequestUrl('/tmap/routes', ['version' => 1,]), [
-                'headers' => [
-                    'appKey' => $this->config->getApiKey(),
-                ],
-                'form_params' => $options + [
-                    'startX' => $origin->getSpatialLng(),
-                    'startY' => $origin->getSpatialLat(),
-                    'endX' => $dest->getSpatialLng(),
-                    'endY' => $dest->getSpatialLat(),
-                    'reqCoordType' => 'WGS84GEO',
-                    'resCoordType' => 'WGS84GEO',
-                    'searchOption' => Configuration::OPTION_SHORTEST,
-                ],
+        return $this->request('post', '/tmap/routes', $options + [
+                'startX' => $origin->getSpatialLng(),
+                'startY' => $origin->getSpatialLat(),
+                'endX' => $dest->getSpatialLng(),
+                'endY' => $dest->getSpatialLat(),
+                'reqCoordType' => 'WGS84GEO',
+                'resCoordType' => 'WGS84GEO',
+                'searchOption' => Configuration::OPTION_SHORTEST,
             ]);
-            return json_decode($response->getBody()->__toString(), true);
-        } catch (ClientException $e) { // 40x ERROR
-            throw $e;
-        } catch (ServerException $e) { // 50x ERROR
-            throw $e;
-        }
+    }
+
+    /**
+     * @param string $method
+     * @param string $path
+     * @param array $form
+     * @return \Apikr\Common\Result
+     */
+    public function request($method, $path, array $form = [])
+    {
+        $response = $this->client->request($method, $this->config->getRequestUrl($path, ['version' => 1,]), [
+            'headers' => [
+                'appKey' => $this->config->getApiKey(),
+            ],
+            'form_params' => $form,
+        ]);
+        return new Result(json_decode($response->getBody()->__toString(), true));
     }
 
     /**
