@@ -1,7 +1,9 @@
 <?php
 namespace Apikr\SKPlanet\TMap;
 
-class LatLng
+use Apikr\SKPlanet\TMap\Contracts\SpatialPoint;
+
+class LatLng implements SpatialPoint 
 {
     /** @var float */
     protected $lat;
@@ -22,7 +24,7 @@ class LatLng
     /**
      * @return float
      */
-    public function getLng()
+    public function getSpatialLng()
     {
         return $this->lng;
     }
@@ -30,7 +32,7 @@ class LatLng
     /**
      * @return float
      */
-    public function getLat()
+    public function getSpatialLat()
     {
         return $this->lat;
     }

@@ -1,6 +1,7 @@
 <?php
 namespace Apikr\SKPlanet\TMap;
 
+use Apikr\SKPlanet\TMap\Contracts\SpatialPoint;
 use Apikr\SKPlanet\TMap\Exception\CannotCalculateException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
@@ -22,13 +23,13 @@ class TMap
     }
 
     /**
-     * @param \Apikr\SKPlanet\TMap\LatLng $origin
-     * @param \Apikr\SKPlanet\TMap\LatLng $dest
+     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $origin
+     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $dest
      * @param array $options
      * @return int
      * @throws \Apikr\SKPlanet\TMap\Exception\CannotCalculateException
      */
-    public function getDistance(LatLng $origin, LatLng $dest, array $options = [])
+    public function getDistance(SpatialPoint $origin, SpatialPoint $dest, array $options = [])
     {
         $result = $this->getRoutes($origin, $dest, $options);
         if (!isset($result['features'])) {
@@ -45,21 +46,21 @@ class TMap
     }
 
     /**
-     * @param \Apikr\SKPlanet\TMap\LatLng[] $points
+     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint[] $points
      * @param array $options
      * @return int[]
      * @throws \Apikr\SKPlanet\TMap\Exception\CannotCalculateException
      */
     public function getDistances(array $points, array $options = [])
     {
-        $this->assertLatLngList(__METHOD__, $points);
+        $this->assertSpatialPointList(__METHOD__, $points);
 
         $origin = array_shift($points);
         $dest = array_pop($points);
 
         $result = $this->getRoutes($origin, $dest, [
-            'passList' => implode('_', array_map(function (LatLng $point) {
-                return $point->getLng() . "," . $point->getLat();
+            'passList' => implode('_', array_map(function (SpatialPoint $point) {
+                return $point->getSpatialLng() . "," . $point->getSpatialLat();
             }, $points)),
         ] + $options);
 
@@ -85,12 +86,12 @@ class TMap
     }
 
     /**
-     * @param \Apikr\SKPlanet\TMap\LatLng $origin
-     * @param \Apikr\SKPlanet\TMap\LatLng $dest
+     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $origin
+     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $dest
      * @param array $options
      * @return array
      */
-    public function getRoutes(LatLng $origin, LatLng $dest, array $options = [])
+    public function getRoutes(SpatialPoint $origin, SpatialPoint $dest, array $options = [])
     {
         try {
             $response = $this->client->post($this->config->getRequestUrl('/tmap/routes', ['version' => 1,]), [
@@ -98,10 +99,10 @@ class TMap
                     'appKey' => $this->config->getApiKey(),
                 ],
                 'form_params' => $options + [
-                    'startX' => $origin->getLng(),
-                    'startY' => $origin->getLat(),
-                    'endX' => $dest->getLng(),
-                    'endY' => $dest->getLat(),
+                    'startX' => $origin->getSpatialLng(),
+                    'startY' => $origin->getSpatialLat(),
+                    'endX' => $dest->getSpatialLng(),
+                    'endY' => $dest->getSpatialLat(),
                     'reqCoordType' => 'WGS84GEO',
                     'resCoordType' => 'WGS84GEO',
                     'searchOption' => Configuration::OPTION_SHORTEST,
@@ -119,12 +120,12 @@ class TMap
      * @param string $methodName
      * @param array $points
      */
-    protected function assertLatLngList($methodName, array $points = [])
+    protected function assertSpatialPointList($methodName, array $points = [])
     {
         $className = static::class;
         foreach ($points as $key => $point) {
-            if (!$point instanceof LatLng) {
-                $argumentType = LatLng::class;
+            if (!$point instanceof SpatialPoint) {
+                $argumentType = SpatialPoint::class;
                 $index = $key + 1;
                 throw new InvalidArgumentException("Argument {$index} passed to {$className}::{$methodName}() must be of the type {$argumentType}");
             }
