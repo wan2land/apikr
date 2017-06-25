@@ -1,11 +1,10 @@
 <?php
 namespace Apikr\Paygate\Seyfert\Exception;
 
-use Apikr\Paygate\Seyfert\Result;
-use Exception;
+use Apikr\Common\Result;
 use RuntimeException;
 
-class SeyfertException extends RuntimeException
+class ApiException extends RuntimeException
 {
     // error
     const CODE_API_CLIENT_ERROR = 400;
@@ -24,17 +23,17 @@ class SeyfertException extends RuntimeException
     /** @var array */
     protected $result;
     
-    public function __construct($message, $code = 0, array $result = [])
+    public function __construct($message, $code = 0, Result $result = null)
     {
         parent::__construct($message, $code);
         $this->result = $result;
     }
 
     /**
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function getResult()
     {
-        return new Result($this->result);
+        return $this->result;
     }
 }

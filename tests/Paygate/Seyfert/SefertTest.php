@@ -2,6 +2,7 @@
 
 namespace Apikr\Paygate\Seyfert;
 
+use Apikr\Common\Result;
 use GuzzleHttp\Client;
 use PHPUnit\Framework\TestCase;
 

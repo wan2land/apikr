@@ -1,8 +1,9 @@
 <?php
 namespace Apikr\Paygate\Seyfert;
 
+use Apikr\Common\Result;
 use Apikr\Paygate\Seyfert\Crypt\AesCtr;
-use Apikr\Paygate\Seyfert\Exception\SeyfertException;
+use Apikr\Paygate\Seyfert\Exception\ApiException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use InvalidArgumentException;
@@ -92,7 +93,7 @@ class Api
      * @param string $name
      * @param string $email
      * @param string $phone
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function createMember($name, $email = null, $phone = null)
     {
@@ -121,14 +122,13 @@ class Api
         } else {
             throw new InvalidArgumentException("email, phone 둘 중 반드시 한개 이상은 입력하셔야 합니다.");
         }
-        $result = $this->request("POST", '/v5a/member/createMember', $form);
-        return new Result($result);
+        return $this->request("POST", '/v5a/member/createMember', $form);
     }
 
     /**
      * @param string $guid
      * @param array $attributes
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function updateMember($guid, array $attributes = [])
     {
@@ -147,22 +147,20 @@ class Api
         }
         if (count($form)) {
             $form['dstMemGuid'] = $guid;
-            $result = $this->request("PUT", '/v5a/member/allInfo', $form);
-            return new Result($result);
+            return $this->request("PUT", '/v5a/member/allInfo', $form);
         }
         throw new InvalidArgumentException('attributes에는 적어도 name, email, phone 중 하나는 있어야 합니다.');
     }
     
     /**
      * @param string $guid
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function getMember($guid)
     {
-        $result = $this->request("GET", '/v5a/member/privateInfo', [
+        return $this->request("GET", '/v5a/member/privateInfo', [
             'dstMemGuid' => $guid,
         ]);
-        return new Result($result);
     }
     
     /**
@@ -171,38 +169,36 @@ class Api
     public function countMembers()
     {
         $result = $this->request("GET", '/v5a/member/count');
-        return isset($result['data']['result']['totalCount']) ? $result['data']['result']['totalCount'] : 0;
+        return (int)($result->search('data.result.totalCount') ?: 0);
     }
 
     /**
      * 세이퍼드 충전용 가상 계좌.
      * 
      * @param string $purpose
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function getBanksForVirtualAccount($purpose = 'p2p')
     {
         // $purpose = "p2p"; // p2p, payment, remit, bitcoin
-        $result = $this->request('GET', "/v5/code/listOf/availableVABanks/{$purpose}/charge");
-        return new Result($result);
+        return $this->request('GET', "/v5/code/listOf/availableVABanks/{$purpose}/charge");
     }
 
     /**
      * 세이퍼드 환불용 가상계좌
      * 
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function getBanksForRealAccount()
     {
-        $result = $this->request('GET', "/v5/code/listOf/banks");
-        return new Result($result);
+        return $this->request('GET', "/v5/code/listOf/banks");
     }
 
     /**
      * @param string $guid
      * @param string $bankCode
      * @param string $accountNumber
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function assignRealAccount($guid, $bankCode, $accountNumber)
     {
@@ -216,23 +212,22 @@ class Api
      * @param string $guid
      * @param string $bankCode
      * @param string $accountNumber
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function assignRealAccountOnly($guid, $bankCode, $accountNumber)
     {
-        $result = $this->request("POST", "/v5a/member/bnk", [
+        return $this->request("POST", "/v5a/member/bnk", [
             'dstMemGuid' => $guid,
             'bnkCd' => $bankCode,
             'accntNo' => $accountNumber,
             'cntryCd' => 'KOR',
         ]);
-        return new Result($result);
     }
 
     /**
      * @internal
      * @param string $guid
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function verifyRealAccountName($guid)
     {
@@ -240,23 +235,23 @@ class Api
             'dstMemGuid' => $guid,
         ]);
         if ($result['data']['status'] === 'CHECK_BNK_NM_FINISHED') {
-            return new Result($result);
+            return $result;
         } elseif ($result['data']['status'] === 'CHECK_BNK_NM_DENIED') {
-            throw new SeyfertException(
+            throw new ApiException(
                 "예금주명 조회에 실패하였습니다.",
-                SeyfertException::CODE_CHECK_BNK_NM_DENIED,
+                ApiException::CODE_CHECK_BNK_NM_DENIED,
                 $result
             );
         } elseif ($result['data']['status'] === 'CHECK_BNK_NM_NEED_REVIEW') {
-            throw new SeyfertException(
+            throw new ApiException(
                 "예금주가 일치하지 않거나 예금주를 조회할 수 없습니다.",
-                SeyfertException::CODE_CHECK_BNK_NM_NEED_REVIEW,
+                ApiException::CODE_CHECK_BNK_NM_NEED_REVIEW,
                 $result
             );
         } else {
-            throw new SeyfertException(
+            throw new ApiException(
                 "예금주명 조회 도중 에러({$result['data']['status']})가 발생하였습니다.",
-                SeyfertException::CODE_CHECK_BNK_NM_UNKNOWN,
+                ApiException::CODE_CHECK_BNK_NM_UNKNOWN,
                 $result
             );
         }
@@ -265,7 +260,7 @@ class Api
     /**
      * @internal 
      * @param string $guid
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function verifyAccountOwner($guid)
     {
@@ -275,11 +270,11 @@ class Api
         // 1원 보냈어요! & 이미 검증완료 된 케이스
         if ($result['data']['status'] === 'VRFY_BNK_CD_SENDING_1WON' 
          || $result['data']['status'] === 'CHECK_BNK_CD_FINISHED') { // 이미 검증완료 된 케이스
-            return new Result($result);
+            return $result;
         }
-        throw new SeyfertException(
+        throw new ApiException(
             "계좌 조회 도중 에러({$result['data']['status']})가 발생하였습니다.",
-            SeyfertException::CODE_CHECK_BNK_CD_UNKNOWN,
+            ApiException::CODE_CHECK_BNK_CD_UNKNOWN,
             $result
         );
     }
@@ -311,9 +306,9 @@ class Api
         if ($result['data']['status'] === 'SFRT_WITHDRAW_REQ_TRYING') {
             return new TransactionResult($result);
         }
-        throw new SeyfertException(
+        throw new ApiException(
             "세피어트 출금 도중 에러({$result['data']['status']})가 발생하였습니다.",
-            SeyfertException::CODE_SFRT_WITHDRAW_UNKNOWN,
+            ApiException::CODE_SFRT_WITHDRAW_UNKNOWN,
             $result
         );
     }
@@ -335,9 +330,9 @@ class Api
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_TRYING' || $result['data']['status'] === 'SFRT_TRNSFR_PND_AGRREED') {
             return new TransactionResult($result);
         }
-        throw new SeyfertException(
+        throw new ApiException(
             "전송 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
-            SeyfertException::CODE_SFRT_TRNSFR_PND_UNKNOWN,
+            ApiException::CODE_SFRT_TRNSFR_PND_UNKNOWN,
             $result
         );
     }
@@ -354,9 +349,9 @@ class Api
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_RELEASED') {
             return new TransactionResult($result);
         }
-        throw new SeyfertException(
+        throw new ApiException(
             "펜딩 헤제 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
-            SeyfertException::CODE_SFRT_TRNSFR_PND_RELEASED_UNKNOWN,
+            ApiException::CODE_SFRT_TRNSFR_PND_RELEASED_UNKNOWN,
             $result
         );
     }
@@ -373,9 +368,9 @@ class Api
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_CANCELED') {
             return new TransactionResult($result);
         }
-        throw new SeyfertException(
+        throw new ApiException(
             "펜딩 취소 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
-            SeyfertException::CODE_SFRT_TRNSFR_PND_CANCELED_UNKNOWN,
+            ApiException::CODE_SFRT_TRNSFR_PND_CANCELED_UNKNOWN,
             $result
         );
     }
@@ -383,15 +378,14 @@ class Api
     /**
      * @param string $guid
      * @param string $bankCode
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function createVirtualAccount($guid, $bankCode)
     {
-        $result = $this->request("PUT", '/v5a/member/assignVirtualAccount/p2p', [
+        return $this->request("PUT", '/v5a/member/assignVirtualAccount/p2p', [
             'dstMemGuid' => $guid,
             'bnkCd' => $bankCode,
         ]);
-        return new Result($result);
     }
 
     /**
@@ -404,42 +398,40 @@ class Api
             'dstMemGuid' => $guid,
             'crrncy' => 'KRW',
         ]);
-        return (int)(isset($result['data']['moneyPair']['amount']) ? $result['data']['moneyPair']['amount'] : 0);
+        return (int)($result->search('data.moneyPair.amount') ?: 0);
     }
 
     /**
      * @param string $guid
      * @param int $page
      * @param int $limit
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function seyfertList($guid, $page = 1, $limit = 10)
     {
-        $result = $this->request("GET", '/v5a/admin/seyfertList', [
+        return $this->request("GET", '/v5a/admin/seyfertList', [
             'dstMemGuid' => $guid,
             'page' => $page,
             'limit' => $limit,
         ]);
-        return new Result($result);
     }
 
     /**
      * @param array $tids
-     * @return \Apikr\Paygate\Seyfert\Result
+     * @return \Apikr\Common\Result
      */
     public function transactionDetail(array $tids = [])
     {
-        $result = $this->request("GET", '/v5a/admin/transaction/detail', [
+        return $this->request("GET", '/v5a/admin/transaction/detail', [
             'tidList' => implode(',', $tids),
         ]);
-        return new Result($result);
     }
 
     /**
      * @param string $method
      * @param string $path
      * @param array $form
-     * @return array
+     * @return \Apikr\Common\Result
      */
     public function request($method, $path, array $form = [])
     {
@@ -460,11 +452,11 @@ class Api
         } catch (ClientException $e) {
             $result = json_decode($e->getResponse()->getBody(), true);
             if (isset($result['data']['cdDesc'])) {
-                throw new SeyfertException($result['data']['cdDesc'] . "..", SeyfertException::CODE_API_CLIENT_ERROR);
+                throw new ApiException($result['data']['cdDesc'] . "..", ApiException::CODE_API_CLIENT_ERROR, new Result($result));
             }
             throw $e;
         }
-        return json_decode($response->getBody()->__toString(), true);
+        return new Result(json_decode($response->getBody()->__toString(), true));
     }
 
     /**
