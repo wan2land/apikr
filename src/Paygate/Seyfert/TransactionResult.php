@@ -1,7 +1,9 @@
 <?php
 namespace Apikr\Paygate\Seyfert;
 
-class TransactionResult extends Result
+use Apikr\Common\Result;
+
+class TransactionResult extends Result 
 {
     /**
      * @return string|null
