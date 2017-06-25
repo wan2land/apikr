@@ -304,7 +304,7 @@ class Api
             'crrncy' => 'KRW',
         ]);
         if ($result['data']['status'] === 'SFRT_WITHDRAW_REQ_TRYING') {
-            return new TransactionResult($result);
+            return new TransactionResult($result->toArray());
         }
         throw new ApiException(
             "세피어트 출금 도중 에러({$result['data']['status']})가 발생하였습니다.",
@@ -328,7 +328,7 @@ class Api
             'crrncy' => 'KRW',
         ]);
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_TRYING' || $result['data']['status'] === 'SFRT_TRNSFR_PND_AGRREED') {
-            return new TransactionResult($result);
+            return new TransactionResult($result->toArray());
         }
         throw new ApiException(
             "전송 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
@@ -347,7 +347,7 @@ class Api
             'parentTid' => $tid,
         ]);
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_RELEASED') {
-            return new TransactionResult($result);
+            return new TransactionResult($result->toArray());
         }
         throw new ApiException(
             "펜딩 헤제 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
@@ -366,7 +366,7 @@ class Api
             'parentTid' => $tid,
         ]);
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_CANCELED') {
-            return new TransactionResult($result);
+            return new TransactionResult($result->toArray());
         }
         throw new ApiException(
             "펜딩 취소 도중 알수 없는 에러({$result['data']['status']})가 발생하였습니다.",
