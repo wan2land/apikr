@@ -198,13 +198,14 @@ class Api
      * @param string $guid
      * @param string $bankCode
      * @param string $accountNumber
+     * @param string $authType
      * @return \Apikr\Common\Result
      */
-    public function assignRealAccount($guid, $bankCode, $accountNumber)
+    public function assignRealAccount($guid, $bankCode, $accountNumber, $authType = 'SMS_MO')
     {
         $this->assignRealAccountOnly($guid, $bankCode, $accountNumber);
         $this->verifyRealAccountName($guid);
-        return $this->verifyAccountOwner($guid);
+        return $this->verifyAccountOwner($guid, $authType);
     }
 
     /**
@@ -258,14 +259,16 @@ class Api
     }
 
     /**
-     * @internal 
+     * @internal
      * @param string $guid
+     * @param string $authType
      * @return \Apikr\Common\Result
      */
-    public function verifyAccountOwner($guid)
+    public function verifyAccountOwner($guid, $authType = 'SMS_MO')
     {
         $result = $this->request("POST", "/v5/transaction/seyfert/checkbankcode", [
             'dstMemGuid' => $guid,
+            'authType' => $authType,
         ]);
         // 1원 보냈어요! & 이미 검증완료 된 케이스
         if ($result['data']['status'] === 'VRFY_BNK_CD_SENDING_1WON' 
