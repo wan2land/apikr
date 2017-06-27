@@ -199,13 +199,25 @@ class Api
      * @param string $bankCode
      * @param string $accountNumber
      * @param string $authType
+     * @param string $authSt
      * @return \Apikr\Common\Result
      */
-    public function assignRealAccount($guid, $bankCode, $accountNumber, $authType = 'SMS_MO')
+    public function assignRealAccount($guid, $bankCode, $accountNumber, $authType = 'SMS_MO', $authSt = null)
     {
         $this->assignRealAccountOnly($guid, $bankCode, $accountNumber);
         $this->verifyRealAccountName($guid);
-        return $this->verifyAccountOwner($guid, $authType);
+        return $this->verifyAccountOwner($guid, $authType, $authSt);
+    }
+
+    /**
+     * @param string $tid
+     * @return \Apikr\Common\Result
+     */
+    public function continueArsTrigger($tid)
+    {
+        return $this->request('POST', "/v5/transaction/continue", [
+            'tid' => $tid,
+        ]);
     }
 
     /**
@@ -262,18 +274,23 @@ class Api
      * @internal
      * @param string $guid
      * @param string $authType
+     * @param string $authSt
      * @return \Apikr\Common\Result
      */
-    public function verifyAccountOwner($guid, $authType = 'SMS_MO')
+    public function verifyAccountOwner($guid, $authType = 'SMS_MO', $authSt = null)
     {
-        $result = $this->request("POST", "/v5/transaction/seyfert/checkbankcode", [
+        $form = [
             'dstMemGuid' => $guid,
             'authType' => $authType,
-        ]);
+        ];
+        if ($authSt) {
+            $form['authSt'] = $authSt;
+        }
+        $result = $this->request("POST", "/v5/transaction/seyfert/checkbankcode", $form);
         // 1원 보냈어요! & 이미 검증완료 된 케이스
         if ($result['data']['status'] === 'VRFY_BNK_CD_SENDING_1WON' 
          || $result['data']['status'] === 'CHECK_BNK_CD_FINISHED') { // 이미 검증완료 된 케이스
-            return $result;
+            return new TransactionResult($result->toArray());
         }
         throw new ApiException(
             "계좌 조회 도중 에러({$result['data']['status']})가 발생하였습니다.",
