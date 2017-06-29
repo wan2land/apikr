@@ -1,9 +1,7 @@
 <?php
 namespace Apikr\SKPlanet\TMap\Exception;
 
-use RuntimeException;
-
-class CannotCalculateException extends RuntimeException
+class CannotCalculateException extends TMapException
 {
     const CODE_UNKNOWN = 0;
     const CODE_CLIENT_ERROR = 1;

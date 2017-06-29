@@ -1,26 +1,19 @@
 <?php
 namespace Apikr\SKPlanet\TMap;
 
-use Apikr\Common\Result;
 use Apikr\SKPlanet\TMap\Contracts\SpatialPoint;
 use Apikr\SKPlanet\TMap\Exception\CannotCalculateException;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ServerException;
+use Apikr\SKPlanet\TMap\Exception\NotFoundGeocodingException;
 use InvalidArgumentException;
 
 class TMap
 {
-    /** @var \GuzzleHttp\Client */
-    protected $client;
+    /** @var \Apikr\SKPlanet\TMap\Api */
+    protected $api;
 
-    /** @var \Apikr\SKPlanet\TMap\Configuration */
-    protected $config;
-
-    public function __construct(Client $client, Configuration $config)
+    public function __construct(Api $api)
     {
-        $this->client = $client;
-        $this->config = $config;
+        $this->api = $api;
     }
 
     /**
@@ -32,7 +25,7 @@ class TMap
      */
     public function getDistance(SpatialPoint $origin, SpatialPoint $dest, array $options = [])
     {
-        $result = $this->getRoutes($origin, $dest, $options);
+        $result = $this->api->getRoutes($origin, $dest, $options);
         if (!isset($result['features'])) {
             throw new CannotCalculateException('features 값이 없습니다.', CannotCalculateException::CODE_NO_EXISTS_FEATURES);
         }
@@ -59,7 +52,7 @@ class TMap
         $origin = array_shift($points);
         $dest = array_pop($points);
 
-        $result = $this->getRoutes($origin, $dest, [
+        $result = $this->api->getRoutes($origin, $dest, [
             'passList' => implode('_', array_map(function (SpatialPoint $point) {
                 return $point->getSpatialLng() . "," . $point->getSpatialLat();
             }, $points)),
@@ -87,41 +80,34 @@ class TMap
     }
 
     /**
-     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $origin
-     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $dest
-     * @param array $options
-     * @return \Apikr\Common\Result
+     * @param string $address
+     * @return \Apikr\SKPlanet\TMap\Contracts\SpatialPoint
      */
-    public function getRoutes(SpatialPoint $origin, SpatialPoint $dest, array $options = [])
+    public function geocoding($address)
     {
-        return $this->request('post', '/tmap/routes', $options + [
-                'startX' => $origin->getSpatialLng(),
-                'startY' => $origin->getSpatialLat(),
-                'endX' => $dest->getSpatialLng(),
-                'endY' => $dest->getSpatialLat(),
-                'reqCoordType' => 'WGS84GEO',
-                'resCoordType' => 'WGS84GEO',
-                'searchOption' => Configuration::OPTION_SHORTEST,
-            ]);
+        $result = $this->api->geocodingFullAddress($address);
+        if ($result->search('coordinateInfo.coordinate | length(@)') > 0) {
+            $coordinate = $result->search('coordinateInfo.coordinate[0]');
+            if (isset($coordinate['lat']) && isset($coordinate['lon']) && $coordinate['lat'] && $coordinate['lon']) {
+                return new LatLng($coordinate['lat'], $coordinate['lon']);
+            }
+            if (isset($coordinate['newLat']) && isset($coordinate['newLon']) && $coordinate['newLat'] && $coordinate['newLon']) {
+                return new LatLng($coordinate['newLat'], $coordinate['newLon']);
+            }
+        }
+        throw new NotFoundGeocodingException($address, "다음 주소({$address})를 찾을 수 없습니다.");
     }
 
     /**
-     * @param string $method
-     * @param string $path
-     * @param array $form
-     * @return \Apikr\Common\Result
+     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $point
+     * @return string
      */
-    public function request($method, $path, array $form = [])
+    public function reverseGeocoding(SpatialPoint $point)
     {
-        $response = $this->client->request($method, $this->config->getRequestUrl($path, ['version' => 1,]), [
-            'headers' => [
-                'appKey' => $this->config->getApiKey(),
-            ],
-            'form_params' => $form,
-        ]);
-        return new Result(json_decode($response->getBody()->__toString(), true));
+        $result = $this->api->reverseGeocoding($point);
+        return trim($result->search('addressInfo.fullAddress'));
     }
-
+    
     /**
      * @param string $methodName
      * @param array $points
