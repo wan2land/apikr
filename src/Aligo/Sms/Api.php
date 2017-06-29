@@ -27,7 +27,7 @@ class Api
     {
         try {
             $form = [
-                'title' => ($title ?: $this->config->title),
+                'subject' => ($title ?: $this->config->title),
                 'sender' => $this->escapeNumber($sender ?: $this->config->sender),
                 'receiver' => $this->escapeNumber($receiver),
                 'msg' => $text,
