@@ -20,7 +20,7 @@ class ApiException extends RuntimeException
     const CODE_SFRT_TRNSFR_PND_RELEASED_UNKNOWN = 505;
     const CODE_SFRT_TRNSFR_PND_CANCELED_UNKNOWN = 506;
 
-    /** @var array */
+    /** @var \Apikr\Common\Result */
     protected $result;
     
     public function __construct($message, $code = 0, Result $result = null)
