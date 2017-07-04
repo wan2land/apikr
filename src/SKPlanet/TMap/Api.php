@@ -52,7 +52,12 @@ class Api
                 'fullAddr' => $address,
             ]);
     }
-    
+
+    /**
+     * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $point
+     * @param array $options
+     * @return \Apikr\Common\Result
+     */
     public function reverseGeocoding(SpatialPoint $point, array $options = [])
     {
         return $this->request('get', '/tmap/geo/reversegeocoding', $options + [
@@ -61,7 +66,23 @@ class Api
                 'coordType' => 'WGS84GEO',
                 'addressType' => 'A04',
             ]);
+    }
 
+    /**
+     * @param string $address
+     * @param string $type
+     * @param array $options
+     * @return \Apikr\Common\Result
+     */
+    public function convertAddress($address, $type = 'OtoN', array $options = [])
+    {
+        return $this->request('get', '/tmap/geo/convertAddress', $options + [
+                'reqAdd' => $address,
+                'searchTypCd' => $type,
+                'reqMulti' => 'M',
+                'resCoordType' => 'WGS84GEO',
+                'addressType' => 'A04',
+            ]);
     }
 
     /**

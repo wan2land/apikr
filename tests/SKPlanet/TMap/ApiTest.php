@@ -30,4 +30,16 @@ class ApiTest extends TestCase
         
         static::assertEquals('서울특별시 중구 명동길 14 Noon Square', $result->search('addressInfo.fullAddress'));
     }
+
+    public function testConvertAddress()
+    {
+        $result = $this->tmap->convertAddress("충남 천안시 성거읍 신월리 370-6");
+
+        static::assertEquals('충남', $result->search('ConvertAdd.upperDistName'));
+        static::assertEquals('천안시 서북구', $result->search('ConvertAdd.middleDistName'));
+        static::assertEquals('성거읍', $result->search('ConvertAdd.legalLowerDistName'));
+        static::assertEquals('봉주로', $result->search('ConvertAdd.newAddressList.newAddress[0].roadName'));
+        static::assertEquals('97', $result->search('ConvertAdd.newAddressList.newAddress[0].bldNo1'));
+        static::assertEquals('0', $result->search('ConvertAdd.newAddressList.newAddress[0].bldNo2'));
+    }
 }
