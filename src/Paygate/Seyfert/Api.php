@@ -138,7 +138,7 @@ class Api
             $form['nmLangCd'] = 'ko';
         }
         if (array_key_exists('email', $attributes)) {
-            $form['emailAddress'] = $attributes['email'];
+            $form['emailAddrss'] = $attributes['email'];
             $form['emailTp'] = 'PERSONAL';
         }
         if (array_key_exists('phone', $attributes)) {
