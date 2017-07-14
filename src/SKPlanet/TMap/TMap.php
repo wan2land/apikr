@@ -8,6 +8,9 @@ use InvalidArgumentException;
 
 class TMap
 {
+    const ADDRESS_OLD = 1;
+    const ADDRESS_NEW = 2;
+    
     /** @var \Apikr\SKPlanet\TMap\Api */
     protected $api;
 
@@ -106,6 +109,39 @@ class TMap
     {
         $result = $this->api->reverseGeocoding($point);
         return trim($result->search('addressInfo.fullAddress'));
+    }
+    
+    public function convertAddress($address, $convertTo = 2)
+    {
+        $types = [
+            static::ADDRESS_NEW => 'OtoN',
+            static::ADDRESS_OLD => 'NtoO',
+        ];
+        $result = $this->api->convertAddress($address, $types[$convertTo]);
+        $chunks = [
+            $result->search('ConvertAdd.upperDistName'),
+            $result->search('ConvertAdd.middleDistName'),
+            $result->search('ConvertAdd.legalLowerDistName'),
+        ];
+        $etcInfo = '';
+        if ($convertTo == static::ADDRESS_NEW) {
+            $chunks[] = $result->search('ConvertAdd.newAddressList.newAddress[0].roadName');
+            $buildNo1 = $result->search('ConvertAdd.newAddressList.newAddress[0].bldNo1');
+            if (0 != $buildNo2 = $result->search('ConvertAdd.newAddressList.newAddress[0].bldNo2')) {
+                $chunks[] = "{$buildNo1}-{$buildNo2}";
+            } else {
+                $chunks[] = $buildNo1;
+            }
+        } else {
+            $chunks[] = $result->search('ConvertAdd.legalDetailName');
+            $primary = $result->search('ConvertAdd.primary');
+            if (0 != $secondary = $result->search('ConvertAdd.secondary')) {
+                $chunks[] = "{$primary}-{$secondary}";
+            } else {
+                $chunks[] = $primary;
+            }
+        }
+        return implode(' ', $chunks) . $etcInfo;
     }
     
     /**

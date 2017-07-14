@@ -103,4 +103,32 @@ class TmapTest extends TestCase
             static::assertEquals(ApiException::CODE_NULL_RESPONSE, $e->getCode());
         }
     }
+
+    public function testConvertAddressToNew()
+    {
+        static::assertEquals(
+            '경북 울진군 후포면 울진대게로 169-69',
+            $this->tmap->convertAddress('경상북도 울진군 후포면 후포리 581-15')
+        );
+        static::assertEquals(
+            '경북 울진군 후포면 울진대게로 169-69',
+            $this->tmap->convertAddress('경상북도 울진군 후포면 후포리 581번지 15')
+        );
+        static::assertEquals(
+            '전북 고창군 아산면 선운사로 39-8',
+            $this->tmap->convertAddress('전라북도 고창군 아산면 삼인리 45번지')
+        );
+    }
+
+    public function testConvertAddressToOld()
+    {
+        static::assertEquals(
+            '경북 울진군 후포면 후포리 581-15',
+            $this->tmap->convertAddress('경북 울진군 후포면 울진대게로 169-69', TMap::ADDRESS_OLD)
+        );
+        static::assertEquals(
+            '전북 고창군 아산면 삼인리 45',
+            $this->tmap->convertAddress('전북 고창군 아산면 선운사로 39-8', TMap::ADDRESS_OLD)
+        );
+    }
 }
