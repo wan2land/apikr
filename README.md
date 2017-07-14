@@ -30,3 +30,5 @@ composer require apikr/apikr
  - PHP 소스이고, [안전한 PHP 버전](https://en.wikipedia.org/wiki/PHP)을 사용합니다. 현재는 PHP 5.6 이상입니다. 
  - HTTP REST Api 경우는 반드시 Guzzle HTTP를 사용합니다.
  - 네임스페이스는 `Apikr\회사이름\서비스이름`으로 해주세요.
+ - 현재 베타버전을 사용하고 있습니다. 기존의 API가 변경된 경우 Minor 버전(0.x.0)이 올라가고,
+   기능이 추가되거나 버그가 수정된 것은 Fix 버전(0.0.x)이 올라갑니다.
