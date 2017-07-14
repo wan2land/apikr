@@ -141,7 +141,7 @@ class TMap
                 $chunks[] = $primary;
             }
         }
-        return implode(' ', $chunks) . $etcInfo;
+        return implode(' ', array_filter($chunks)) . $etcInfo;
     }
     
     /**

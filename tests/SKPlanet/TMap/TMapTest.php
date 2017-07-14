@@ -118,6 +118,10 @@ class TmapTest extends TestCase
             '전북 고창군 아산면 선운사로 39-8',
             $this->tmap->convertAddress('전라북도 고창군 아산면 삼인리 45번지')
         );
+        static::assertEquals(
+            '세종시 장군면 풍덕골길 7-6',
+            $this->tmap->convertAddress('세종특별자치시 장군면 도계리 19-11')
+        );
     }
 
     public function testConvertAddressToOld()
