@@ -1,6 +1,17 @@
 SK Planet, T-Map
 ================
 
+[![Latest Stable Version](https://poser.pugx.org/apikr/skplanet-tmap/v/stable.svg)](https://packagist.org/packages/apikr/skplanet-tmap)
+[![Latest Unstable Version](https://poser.pugx.org/apikr/skplanet-tmap/v/unstable.svg)](https://packagist.org/packages/apikr/skplanet-tmap)
+[![Total Downloads](https://poser.pugx.org/apikr/skplanet-tmap/downloads.svg)](https://packagist.org/packages/apikr/skplanet-tmap)
+[![License](https://poser.pugx.org/apikr/skplanet-tmap/license.svg)](https://packagist.org/packages/apikr/skplanet-tmap)
+
+## Installation
+
+```bash
+composer require apikr/skplanet-tmap
+```
+
 공식페이지 : [developers.skplanetx.com/apidoc/kor/tmap](https://developers.skplanetx.com/apidoc/kor/tmap)
 
 ## 사용법

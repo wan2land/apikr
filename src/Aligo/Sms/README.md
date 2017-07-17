@@ -1,6 +1,17 @@
 Aligo, SMS
 ================
 
+[![Latest Stable Version](https://poser.pugx.org/apikr/aligo-sms/v/stable.svg)](https://packagist.org/packages/apikr/aligo-sms)
+[![Latest Unstable Version](https://poser.pugx.org/apikr/aligo-sms/v/unstable.svg)](https://packagist.org/packages/apikr/aligo-sms)
+[![Total Downloads](https://poser.pugx.org/apikr/aligo-sms/downloads.svg)](https://packagist.org/packages/apikr/aligo-sms)
+[![License](https://poser.pugx.org/apikr/aligo-sms/license.svg)](https://packagist.org/packages/apikr/aligo-sms)
+
+## Installation
+
+```bash
+composer require apikr/aligo-sms
+```
+
 공식페이지 : [smartsms.aligo.in](https://smartsms.aligo.in/main.html)
 
 ## 사용법

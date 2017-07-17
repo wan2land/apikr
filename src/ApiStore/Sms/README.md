@@ -1,6 +1,17 @@
 API Store, SMS
 ==============
 
+[![Latest Stable Version](https://poser.pugx.org/apikr/apistore-sms/v/stable.svg)](https://packagist.org/packages/apikr/apistore-sms)
+[![Latest Unstable Version](https://poser.pugx.org/apikr/apistore-sms/v/unstable.svg)](https://packagist.org/packages/apikr/apistore-sms)
+[![Total Downloads](https://poser.pugx.org/apikr/apistore-sms/downloads.svg)](https://packagist.org/packages/apikr/apistore-sms)
+[![License](https://poser.pugx.org/apikr/apistore-sms/license.svg)](https://packagist.org/packages/apikr/apistore-sms)
+
+## Installation
+
+```bash
+composer require apikr/apistore-sms
+```
+
 - [공식페이지](https://www.apistore.co.kr/api/apiViewPrice.do?service_seq=151)
 
 ## 사용법

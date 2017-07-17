@@ -1,5 +1,6 @@
 {
     "name": "apikr/skplanet-tmap",
+    "license": "MIT",
     "require": {
         "php": ">=5.6",
         "apikr/api": "^0.6",

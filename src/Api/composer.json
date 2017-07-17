@@ -1,5 +1,6 @@
 {
     "name": "apikr/api",
+    "license": "MIT",
     "require": {
         "php": ">=5.6",
         "mtdowling/jmespath.php": "^2.4"
