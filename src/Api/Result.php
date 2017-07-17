@@ -6,9 +6,19 @@ use ArrayIterator;
 use Countable;
 use IteratorAggregate;
 use JmesPath\Env;
+use Psr\Http\Message\ResponseInterface;
 
 class Result implements ArrayAccess, Countable, IteratorAggregate
 {
+    /**
+     * @param \Psr\Http\Message\ResponseInterface $response
+     * @return \Apikr\Api\Result
+     */
+    public static function createFromResponse(ResponseInterface $response)
+    {
+        return new Result(json_decode($response->getBody()->__toString(), true));
+    }
+    
     /** @var array */
     protected $data = [];
 
