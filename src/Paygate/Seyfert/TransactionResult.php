@@ -1,7 +1,7 @@
 <?php
 namespace Apikr\Paygate\Seyfert;
 
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 
 class TransactionResult extends Result 
 {

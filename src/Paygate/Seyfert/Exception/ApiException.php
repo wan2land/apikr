@@ -1,7 +1,7 @@
 <?php
 namespace Apikr\Paygate\Seyfert\Exception;
 
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 use RuntimeException;
 
 class ApiException extends RuntimeException
@@ -20,7 +20,7 @@ class ApiException extends RuntimeException
     const CODE_SFRT_TRNSFR_PND_RELEASED_UNKNOWN = 505;
     const CODE_SFRT_TRNSFR_PND_CANCELED_UNKNOWN = 506;
 
-    /** @var \Apikr\Common\Result */
+    /** @var \Apikr\Api\Result */
     protected $result;
     
     public function __construct($message, $code = 0, Result $result = null)
@@ -30,7 +30,7 @@ class ApiException extends RuntimeException
     }
 
     /**
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function getResult()
     {

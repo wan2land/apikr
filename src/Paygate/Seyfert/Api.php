@@ -1,7 +1,7 @@
 <?php
 namespace Apikr\Paygate\Seyfert;
 
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 use Apikr\Paygate\Seyfert\Crypt\AesCtr;
 use Apikr\Paygate\Seyfert\Exception\ApiException;
 use GuzzleHttp\Client;
@@ -93,7 +93,7 @@ class Api
      * @param string $name
      * @param string $email
      * @param string $phone
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function createMember($name, $email = null, $phone = null)
     {
@@ -128,7 +128,7 @@ class Api
     /**
      * @param string $guid
      * @param array $attributes
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function updateMember($guid, array $attributes = [])
     {
@@ -154,7 +154,7 @@ class Api
     
     /**
      * @param string $guid
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function getMember($guid)
     {
@@ -176,7 +176,7 @@ class Api
      * 세이퍼드 충전용 가상 계좌.
      * 
      * @param string $purpose
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function getBanksForVirtualAccount($purpose = 'p2p')
     {
@@ -187,7 +187,7 @@ class Api
     /**
      * 세이퍼드 환불용 가상계좌
      * 
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function getBanksForRealAccount()
     {
@@ -200,7 +200,7 @@ class Api
      * @param string $accountNumber
      * @param string $authType
      * @param string $authSt
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function assignRealAccount($guid, $bankCode, $accountNumber, $authType = 'SMS_MO', $authSt = null)
     {
@@ -211,7 +211,7 @@ class Api
 
     /**
      * @param string $tid
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function continueArsTrigger($tid)
     {
@@ -225,7 +225,7 @@ class Api
      * @param string $guid
      * @param string $bankCode
      * @param string $accountNumber
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function assignRealAccountOnly($guid, $bankCode, $accountNumber)
     {
@@ -240,7 +240,7 @@ class Api
     /**
      * @internal
      * @param string $guid
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function verifyRealAccountName($guid)
     {
@@ -275,7 +275,7 @@ class Api
      * @param string $guid
      * @param string $authType
      * @param string $authSt
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function verifyAccountOwner($guid, $authType = 'SMS_MO', $authSt = null)
     {
@@ -398,7 +398,7 @@ class Api
     /**
      * @param string $guid
      * @param string $bankCode
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function createVirtualAccount($guid, $bankCode)
     {
@@ -425,7 +425,7 @@ class Api
      * @param string $guid
      * @param int $page
      * @param int $limit
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function seyfertList($guid, $page = 1, $limit = 10)
     {
@@ -438,7 +438,7 @@ class Api
 
     /**
      * @param array $tids
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function transactionDetail(array $tids = [])
     {
@@ -451,7 +451,7 @@ class Api
      * @param string $method
      * @param string $path
      * @param array $form
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function request($method, $path, array $form = [])
     {

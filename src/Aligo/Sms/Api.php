@@ -3,7 +3,7 @@ namespace Apikr\Aligo\Sms;
 
 use Apikr\Aligo\Sms\Exception\RequestException;
 use Apikr\Aligo\Sms\Exception\SmsDeliveryException;
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 use GuzzleHttp\Client;
 
 class Api
@@ -42,7 +42,7 @@ class Api
     }
 
     /**
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function remain()
     {
@@ -76,7 +76,7 @@ class Api
     /**
      * @param string $uri
      * @param array $form
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function request($uri, array $form = [])
     {

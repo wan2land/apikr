@@ -1,7 +1,7 @@
 <?php
 namespace Apikr\SKPlanet\TMap;
 
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 use Apikr\SKPlanet\TMap\Contracts\SpatialPoint;
 use Apikr\SKPlanet\TMap\Exception\ApiException;
 use GuzzleHttp\Client;
@@ -24,7 +24,7 @@ class Api
      * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $origin
      * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $dest
      * @param array $options
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function getRoutes(SpatialPoint $origin, SpatialPoint $dest, array $options = [])
     {
@@ -42,7 +42,7 @@ class Api
     /**
      * @param string $address
      * @param array $options
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function geocodingFullAddress($address, array $options = [])
     {
@@ -56,7 +56,7 @@ class Api
     /**
      * @param \Apikr\SKPlanet\TMap\Contracts\SpatialPoint $point
      * @param array $options
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function reverseGeocoding(SpatialPoint $point, array $options = [])
     {
@@ -72,7 +72,7 @@ class Api
      * @param string $address
      * @param string $type
      * @param array $options
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function convertAddress($address, $type = 'OtoN', array $options = [])
     {
@@ -89,7 +89,7 @@ class Api
      * @param string $method
      * @param string $path
      * @param array $form
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function request($method, $path, array $form = [])
     {

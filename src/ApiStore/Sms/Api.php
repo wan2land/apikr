@@ -3,7 +3,7 @@ namespace Apikr\ApiStore\Sms;
 
 use Apikr\ApiStore\Sms\Exception\RequestException;
 use Apikr\ApiStore\Sms\Exception\SmsDeliveryException;
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 use GuzzleHttp\Client;
 
 class Api
@@ -21,7 +21,7 @@ class Api
     }
 
     /**
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function senderList()
     {
@@ -30,7 +30,7 @@ class Api
 
     /**
      * @param string $phone
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function saveSender($phone)
     {
@@ -44,7 +44,7 @@ class Api
      * @param string $text
      * @param string $title
      * @param string $sender
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function send($receiver, $text, $title = null, $sender = null)
     {
@@ -63,7 +63,7 @@ class Api
     /**
      * @param string $uri
      * @param array $form
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function request($uri, array $form = [])
     {

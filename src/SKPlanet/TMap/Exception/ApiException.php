@@ -1,14 +1,14 @@
 <?php
 namespace Apikr\SKPlanet\TMap\Exception;
 
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 
 class ApiException extends TMapException
 {
     const CODE_NULL_RESPONSE = 1;
     const CODE_BAD_REQUEST = 1100;
 
-    /** @var \Apikr\Common\Result */
+    /** @var \Apikr\Api\Result */
     protected $result;
 
     public function __construct($message, $code = 0, Result $result = null)

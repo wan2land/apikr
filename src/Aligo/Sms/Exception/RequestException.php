@@ -1,7 +1,7 @@
 <?php
 namespace Apikr\Aligo\Sms\Exception;
 
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 use RuntimeException;
 use Exception;
 
@@ -32,13 +32,13 @@ class RequestException extends RuntimeException
         -900 => '알려지지 않은 에러',
     ];
     
-    /** @var \Apikr\Common\Result */
+    /** @var \Apikr\Api\Result */
     protected $result;
 
     /**
      * @param string $message
      * @param int $code
-     * @param \Apikr\Common\Result $result
+     * @param \Apikr\Api\Result $result
      * @param \Exception $previous
      */
     public function __construct($message = '', $code = 0, Result $result = null, Exception $previous = null)
@@ -51,7 +51,7 @@ class RequestException extends RuntimeException
     }
 
     /**
-     * @return \Apikr\Common\Result
+     * @return \Apikr\Api\Result
      */
     public function getResult()
     {

@@ -1,7 +1,7 @@
 <?php
 namespace Apikr\ApiStore\Sms;
 
-use Apikr\Common\Result;
+use Apikr\Api\Result;
 use GuzzleHttp\Client;
 use PHPUnit\Framework\TestCase;
 

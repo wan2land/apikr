@@ -1,5 +1,5 @@
 <?php
-namespace Apikr\Common;
+namespace Apikr\Api;
 
 use ArrayAccess;
 use ArrayIterator;
