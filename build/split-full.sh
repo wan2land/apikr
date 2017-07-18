@@ -24,6 +24,7 @@ split_parallel Aligo/Sms        aligo-sms           "master" $TAG & PIDS+=($!)
 split_parallel ApiStore/Sms     apistore-sms        "master" $TAG & PIDS+=($!)
 split_parallel Paygate/Seyfert  paygate-seyfert     "master" $TAG & PIDS+=($!)
 split_parallel SKPlanet/TMap    skplanet-tmap       "master" $TAG & PIDS+=($!)
+split_parallel Siot/Iamport     siot-iamport        "master" $TAG & PIDS+=($!)
 
 for PID in "${PIDS[@]}"
 do
