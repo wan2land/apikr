@@ -4,6 +4,7 @@ namespace Apikr\Siot\Iamport;
 use Apikr\Api\Result;
 use Apikr\Siot\Iamport\Contracts\CardExpiryInterface;
 use Apikr\Siot\Iamport\Contracts\CardNumberInterface;
+use Apikr\Siot\Iamport\Contracts\TransactionInterface;
 use Apikr\Siot\Iamport\Exception\IamportRequestException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
@@ -25,6 +26,19 @@ class Api
         $this->config = $config;
         $this->cache = $config->cache ?: new ArrayCache();
     }
+
+    /**
+     * @param \Apikr\Siot\Iamport\Contracts\TransactionInterface $transaction
+     * @param array $options
+     * @return \Apikr\Siot\Iamport\TransactionResult
+     */
+    public function cancelPayment(TransactionInterface $transaction, array $options = [])
+    {
+        $result = $this->request('post', '/payments/cancel', $options + [
+            'imp_uid' => $transaction->getImpUid(),
+        ]);
+        return new TransactionResult($result->toArray());
+    }
     
     /**
      * @param string $customerUid
@@ -35,7 +49,7 @@ class Api
      * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function createSubscribeCustomer(
+    public function saveUnauthPaymentCustomer(
         $customerUid,
         CardNumberInterface $cardNumber,
         CardExpiryInterface $expiry,
@@ -55,7 +69,7 @@ class Api
      * @param string $customerUid
      * @return \Apikr\Api\Result
      */
-    public function getSubscribeCustomer($customerUid)
+    public function getUnauthPaymentCustomer($customerUid)
     {
         return $this->request('get', "/subscribe/customers/{$customerUid}");
     }
@@ -64,11 +78,38 @@ class Api
      * @param string $customerUid
      * @return \Apikr\Api\Result
      */
-    public function removeSubscribeCustomer($customerUid)
+    public function removeUnauthPaymentCustomer($customerUid)
     {
         return $this->request('delete', "/subscribe/customers/{$customerUid}");
     }
+
+    /**
+     * @param string $customerUid
+     * @param string $merchantUid
+     * @param int $amount
+     * @param string $name
+     * @param array $options
+     * @return \Apikr\Siot\Iamport\TransactionResult
+     */
+    public function makeUnauthPayment($customerUid, $merchantUid, $amount, $name, array $options = [])
+    {
+        $result = $this->request('post', "/subscribe/payments/again", $options + [
+            'customer_uid' => $customerUid,
+            'merchant_uid' => $merchantUid,
+            'amount' => (int)$amount,
+            'name' => $name,
+        ]);
+        return new TransactionResult($result->toArray());
+    }
     
+    public function scheduleUnauthPayment($customerUid, $merchantUid, $amount, $name, array $options = [])
+    {
+    }
+
+    public function unscheduleUnauthPayment($customerUid, $merchantUid, $amount, $name, array $options = [])
+    {
+    }
+
     /**
      * @return string
      */

@@ -2,6 +2,7 @@
 namespace Apikr\Siot\Iamport;
 
 use Apikr\Api\Result;
+use Apikr\Siot\Iamport\Contracts\TransactionInterface;
 use Apikr\Siot\Iamport\Exception\IamportRequestException;
 use Apikr\Siot\Iamport\VO\CardExpiry;
 use Apikr\Siot\Iamport\VO\CardNumber;
@@ -40,7 +41,7 @@ class ApiTest extends TestCase
             return;
         }
 
-        $result = $this->api->createSubscribeCustomer(
+        $result = $this->api->saveUnauthPaymentCustomer(
             'apikr4028',
             new CardNumber($this->config['cardnumber']),
             new CardExpiry($this->config['expiry']),
@@ -52,21 +53,50 @@ class ApiTest extends TestCase
         static::assertEquals('apikr4028', $result->search('response.customer_uid'));
         $cardName = $result->search('response.card_name'); 
         
-        $result = $this->api->getSubscribeCustomer('apikr4028');
+        $result = $this->api->getUnauthPaymentCustomer('apikr4028');
         static::assertInstanceOf(Result::class, $result);
         static::assertEquals('apikr4028', $result->search('response.customer_uid'));
         static::assertEquals($cardName, $result->search('response.card_name'));
 
-        $result = $this->api->removeSubscribeCustomer('apikr4028');
+        $result = $this->api->removeUnauthPaymentCustomer('apikr4028');
         static::assertInstanceOf(Result::class, $result);
         static::assertEquals('apikr4028', $result->search('response.customer_uid'));
         static::assertEquals($cardName, $result->search('response.card_name'));
 
         try {
-            $this->api->getSubscribeCustomer('apikr4028');
+            $this->api->getUnauthPaymentCustomer('apikr4028');
             static::fail();
         } catch (IamportRequestException $e) {
             static::assertEquals('요청하신 customer_uid(apikr4028)로 등록된 정보를 찾을 수 없습니다.', $e->getMessage());
         }
+    }
+
+    public function testMakeUnauthPaying()
+    {
+        if (!isset($this->config['cardnumber'])) {
+            static::markTestSkipped('test.config.php is null');
+            return;
+        }
+
+        $this->api->saveUnauthPaymentCustomer(
+            'apikr4028',
+            new CardNumber($this->config['cardnumber']),
+            new CardExpiry($this->config['expiry']),
+            $this->config['birthday'],
+            $this->config['pwd2digit']
+        );
+
+        $merchantUid = uniqid('apikr_merchant_');
+        $result = $this->api->makeUnauthPayment('apikr4028', $merchantUid, 1000, '그냥결제');
+        static::assertInstanceOf(TransactionResult::class, $result);
+        static::assertRegExp('~^imps_\d+$~', $result->getImpUid());
+
+        usleep(500000);
+        
+        $result = $this->api->cancelPayment($result);
+        static::assertInstanceOf(TransactionResult::class, $result);
+        static::assertRegExp('~^imps_\d+$~', $result->getImpUid());
+        static::assertEquals(1000, $result->search('response.cancel_amount'));
+        static::assertEquals('그냥결제', $result->search('response.name'));
     }
 }
