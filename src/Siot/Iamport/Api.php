@@ -4,10 +4,14 @@ namespace Apikr\Siot\Iamport;
 use Apikr\Api\Result;
 use Apikr\Siot\Iamport\Contracts\CardExpiryInterface;
 use Apikr\Siot\Iamport\Contracts\CardNumberInterface;
+use Apikr\Siot\Iamport\Contracts\MerchantIdentifierInterface;
+use Apikr\Siot\Iamport\Contracts\MerchantInterface;
 use Apikr\Siot\Iamport\Contracts\TransactionInterface;
 use Apikr\Siot\Iamport\Exception\IamportRequestException;
+use Apikr\Siot\Iamport\VO\MerchantIdentifier;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use InvalidArgumentException;
 
 class Api
 {
@@ -85,29 +89,75 @@ class Api
 
     /**
      * @param string $customerUid
-     * @param string $merchantUid
-     * @param int $amount
-     * @param string $name
+     * @param \Apikr\Siot\Iamport\Contracts\MerchantInterface $merchant
      * @param array $options
      * @return \Apikr\Siot\Iamport\TransactionResult
      */
-    public function makeUnauthPayment($customerUid, $merchantUid, $amount, $name, array $options = [])
+    public function makeUnauthPayment($customerUid, MerchantInterface $merchant, array $options = [])
     {
-        $result = $this->request('post', "/subscribe/payments/again", $options + [
+        $formData = $options + $merchant->getMerchantOptions() + [
             'customer_uid' => $customerUid,
-            'merchant_uid' => $merchantUid,
-            'amount' => (int)$amount,
-            'name' => $name,
-        ]);
+            'merchant_uid' => $merchant->getMerchantUid(),
+            'amount' => (int)$merchant->getMerchantAmount(),
+            'name' => $merchant->getMerchantName(),
+        ];
+        $result = $this->request('post', "/subscribe/payments/again", $formData);
         return new TransactionResult($result->toArray());
     }
     
-    public function scheduleUnauthPayment($customerUid, $merchantUid, $amount, $name, array $options = [])
+    /**
+     * @param string $customerUid
+     * @param int $page
+     * @return \Apikr\Api\Result
+     */
+    public function retrieveUnauthPayments($customerUid, $page = 1)
     {
+        return $this->request('get', "/subscribe/customers/{$customerUid}/payments", [
+            'page' => (int) $page,
+        ]);
     }
 
-    public function unscheduleUnauthPayment($customerUid, $merchantUid, $amount, $name, array $options = [])
+    /**
+     * @param string $customerUid
+     * @param \Apikr\Siot\Iamport\Contracts\MerchantInterface[] $merchants
+     * @param \DateTime|int $scheduledAt
+     * @param array $options
+     * @return \Apikr\Api\Result
+     */
+    public function scheduleUnauthPayment($customerUid, array $merchants, $scheduledAt = 0, array $options = [])
     {
+        $scheduledAt = max($this->normalizeSchedule($scheduledAt), time() + 300); // default value is 5 minutes
+        $formData = $options
+            + [
+                'customer_uid' => $customerUid,
+                'schedules' => array_map(function (MerchantInterface $merchant) use ($scheduledAt) {
+                    return $merchant->getMerchantOptions() + [
+                        'schedule_at' => $scheduledAt,
+                        'merchant_uid' => $merchant->getMerchantUid(),
+                        'amount' => (int) $merchant->getMerchantAmount(),
+                        'name' => $merchant->getMerchantName(),
+                    ];
+                }, $merchants),
+            ];
+        return $this->request('post', '/subscribe/payments/schedule', $formData);
+    }
+
+    /**
+     * @param $customerUid
+     * @param \Apikr\Siot\Iamport\Contracts\MerchantIdentifierInterface[] $merchantIds
+     * @param array $options
+     * @return \Apikr\Api\Result
+     */
+    public function unscheduleUnauthPayment($customerUid, array $merchantIds, array $options = [])
+    {
+        $formData = $options
+            + [
+                'customer_uid' => $customerUid,
+                'merchant_uid' => array_map(function (MerchantIdentifierInterface $merchant) {
+                    return $merchant->getMerchantUid();
+                }, $merchantIds),
+            ];
+        return $this->request('post', '/subscribe/payments/unschedule', $formData);
     }
 
     /**
@@ -118,7 +168,7 @@ class Api
         if ($this->cache->has($this->config->tokenCacheKey)) {
             return $this->cache->get($this->config->tokenCacheKey);
         }
-        $result = $this->request('POST', '/users/getToken', [
+        $result = $this->request('post', '/users/getToken', [
             'imp_key' => $this->config->impKey,
             'imp_secret' => $this->config->impSecret,
         ], false);
@@ -133,11 +183,11 @@ class Api
     /**
      * @param string $method
      * @param string $path
-     * @param array $form
+     * @param array $formData
      * @param bool $auth
      * @return \Apikr\Api\Result
      */
-    public function request($method, $path, array $form = [], $auth = true)
+    public function request($method, $path, array $formData = [], $auth = true)
     {
         $headers = [];
         if ($auth) {
@@ -148,11 +198,11 @@ class Api
             $options = [
                 'headers' => $headers,
             ];
-            if (count($form)) {
+            if (count($formData)) {
                 if (strtolower($method) === 'get') {
-                    $uri .= '?' . http_build_query($form);
+                    $uri .= '?' . http_build_query($formData);
                 } else {
-                    $options['json'] = $form;
+                    $options['json'] = $formData;
                 }
             }
             $response = $this->client->request($method, $uri, $options);
@@ -165,5 +215,19 @@ class Api
             $result = Result::createFromResponse($e->getResponse());
             throw new IamportRequestException($result->search('message'), $result->search('code'), $result, $e);
         }
+    }
+
+    /**
+     * @param \DateTime|int $schedule
+     * @return int
+     */
+    protected function normalizeSchedule($schedule)
+    {
+        if ($schedule instanceof \DateTime) {
+            return (int) $schedule->format('U');
+        } elseif (!is_numeric($schedule)) {
+            throw new InvalidArgumentException(sprintf('schedule date must be an integer or a DateTime, "%s" given', is_object($schedule) ? get_class($schedule) : gettype($schedule)));
+        }
+        return (int) $schedule;
     }
 }
