@@ -4,6 +4,7 @@ namespace Apikr\Siot\Iamport;
 use Apikr\Api\ConfigurationAbstract;
 
 /**
+ * @property-read string $host
  * @property-read string $impKey
  * @property-read string $impSecret
  * @property-read string $debug
@@ -34,20 +35,9 @@ class Configuration extends ConfigurationAbstract
     }
 
     /**
-     * @param string $path
-     * @param array $queries
      * @return string
      */
-    public function getRequestUrl($path, array $queries = [])
-    {
-        $url = $this->getHost() . $path;
-        if (count($queries)) {
-            $url .= '?' . http_build_query($queries);
-        }
-        return $url;
-    }
-    
-    public function getHost()
+    public function getHostAttribute()
     {
         return 'https://api.iamport.kr';
     }

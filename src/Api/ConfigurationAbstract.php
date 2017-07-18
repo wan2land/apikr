@@ -42,6 +42,10 @@ abstract class ConfigurationAbstract
      */
     public function __get($name)
     {
+        $methodName = 'get' . lcfirst($name) . 'Attribute';
+        if (method_exists($this, $methodName)) {
+            return $this->{$methodName}();
+        }
         if (array_key_exists($name, $this->attributes)) {
             return $this->attributes[$name];
         }

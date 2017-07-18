@@ -2,6 +2,7 @@
 namespace Apikr\Siot\Iamport;
 
 use Apikr\Api\Result;
+use Apikr\Siot\Iamport\Exception\IamportRequestException;
 use Apikr\Siot\Iamport\VO\CardExpiry;
 use Apikr\Siot\Iamport\VO\CardNumber;
 use GuzzleHttp\Client;
@@ -32,12 +33,13 @@ class ApiTest extends TestCase
         static::assertRegExp('/^[a-f0-9]{40}$/', $token);
     }
 
-    public function testCreateSubscribeCustomer()
+    public function testCRUDSubscribeCustomer()
     {
         if (!isset($this->config['cardnumber'])) {
             static::markTestSkipped('test.config.php is null');
             return;
         }
+
         $result = $this->api->createSubscribeCustomer(
             'apikr4028',
             new CardNumber($this->config['cardnumber']),
@@ -45,6 +47,26 @@ class ApiTest extends TestCase
             $this->config['birthday'],
             $this->config['pwd2digit']
         );
+
         static::assertInstanceOf(Result::class, $result);
+        static::assertEquals('apikr4028', $result->search('response.customer_uid'));
+        $cardName = $result->search('response.card_name'); 
+        
+        $result = $this->api->getSubscribeCustomer('apikr4028');
+        static::assertInstanceOf(Result::class, $result);
+        static::assertEquals('apikr4028', $result->search('response.customer_uid'));
+        static::assertEquals($cardName, $result->search('response.card_name'));
+
+        $result = $this->api->removeSubscribeCustomer('apikr4028');
+        static::assertInstanceOf(Result::class, $result);
+        static::assertEquals('apikr4028', $result->search('response.customer_uid'));
+        static::assertEquals($cardName, $result->search('response.card_name'));
+
+        try {
+            $this->api->getSubscribeCustomer('apikr4028');
+            static::fail();
+        } catch (IamportRequestException $e) {
+            static::assertEquals('요청하신 customer_uid(apikr4028)로 등록된 정보를 찾을 수 없습니다.', $e->getMessage());
+        }
     }
 }

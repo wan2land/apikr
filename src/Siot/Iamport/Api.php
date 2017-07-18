@@ -52,6 +52,24 @@ class Api
     }
 
     /**
+     * @param string $customerUid
+     * @return \Apikr\Api\Result
+     */
+    public function getSubscribeCustomer($customerUid)
+    {
+        return $this->request('get', "/subscribe/customers/{$customerUid}");
+    }
+
+    /**
+     * @param string $customerUid
+     * @return \Apikr\Api\Result
+     */
+    public function removeSubscribeCustomer($customerUid)
+    {
+        return $this->request('delete', "/subscribe/customers/{$customerUid}");
+    }
+    
+    /**
      * @return string
      */
     public function createToken()
@@ -73,24 +91,32 @@ class Api
 
     /**
      * @param string $method
-     * @param string $uri
+     * @param string $path
      * @param array $form
      * @param bool $auth
      * @return \Apikr\Api\Result
      */
-    public function request($method, $uri, array $form = [], $auth = true)
+    public function request($method, $path, array $form = [], $auth = true)
     {
         $headers = [];
         if ($auth) {
             $headers['Authorization'] = $this->createToken();
         }
         try {
-            $response = $this->client->request($method, $this->config->getRequestUrl($uri), [
-                'json' => $form,
+            $uri = $this->config->host . $path;
+            $options = [
                 'headers' => $headers,
-            ]);
+            ];
+            if (count($form)) {
+                if (strtolower($method) === 'get') {
+                    $uri .= '?' . http_build_query($form);
+                } else {
+                    $options['json'] = $form;
+                }
+            }
+            $response = $this->client->request($method, $uri, $options);
             $result = Result::createFromResponse($response);
-            if ($result->search('code') == -1) {
+            if ($result->search('code') != 0) {
                 throw new IamportRequestException($result->search('message'), $result->search('code'), $result);
             }
             return $result;
