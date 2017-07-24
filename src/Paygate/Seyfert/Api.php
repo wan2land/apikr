@@ -93,9 +93,10 @@ class Api
      * @param string $name
      * @param string $email
      * @param string $phone
+     * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function createMember($name, $email = null, $phone = null)
+    public function createMember($name, $email = null, $phone = null, array $options = [])
     {
         if ($email && $phone) {
             $form = [
@@ -122,15 +123,16 @@ class Api
         } else {
             throw new InvalidArgumentException("email, phone 둘 중 반드시 한개 이상은 입력하셔야 합니다.");
         }
-        return $this->request("POST", '/v5a/member/createMember', $form);
+        return $this->request("POST", '/v5a/member/createMember', $options + $form);
     }
 
     /**
      * @param string $guid
      * @param array $attributes
+     * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function updateMember($guid, array $attributes = [])
+    public function updateMember($guid, array $attributes = [], array $options = [])
     {
         $form = [];
         if (array_key_exists('name', $attributes)) {
@@ -147,18 +149,19 @@ class Api
         }
         if (count($form)) {
             $form['dstMemGuid'] = $guid;
-            return $this->request("PUT", '/v5a/member/allInfo', $form);
+            return $this->request("PUT", '/v5a/member/allInfo', $options + $form);
         }
         throw new InvalidArgumentException('attributes에는 적어도 name, email, phone 중 하나는 있어야 합니다.');
     }
     
     /**
      * @param string $guid
+     * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function getMember($guid)
+    public function getMember($guid, array $options = [])
     {
-        return $this->request("GET", '/v5a/member/privateInfo', [
+        return $this->request("GET", '/v5a/member/privateInfo', $options + [
             'dstMemGuid' => $guid,
         ]);
     }
@@ -211,11 +214,12 @@ class Api
 
     /**
      * @param string $tid
+     * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function continueArsTrigger($tid)
+    public function continueArsTrigger($tid, array $options = [])
     {
-        return $this->request('POST', "/v5/transaction/continue", [
+        return $this->request('POST', "/v5/transaction/continue", $options + [
             'tid' => $tid,
         ]);
     }
@@ -225,11 +229,12 @@ class Api
      * @param string $guid
      * @param string $bankCode
      * @param string $accountNumber
+     * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function assignRealAccountOnly($guid, $bankCode, $accountNumber)
+    public function assignRealAccountOnly($guid, $bankCode, $accountNumber, array $options = [])
     {
-        return $this->request("POST", "/v5a/member/bnk", [
+        return $this->request("POST", "/v5a/member/bnk", $options + [
             'dstMemGuid' => $guid,
             'bnkCd' => $bankCode,
             'accntNo' => $accountNumber,
@@ -314,14 +319,17 @@ class Api
     /**
      * @param string $guid
      * @param int $amount
+     * @param string $authType
+     * @param array $options
      * @return \Apikr\Paygate\Seyfert\TransactionResult
      */
-    public function withdraw($guid, $amount)
+    public function withdraw($guid, $amount, $authType = 'SMS_MO', array $options = [])
     {
-        $result = $this->request("POST", '/v5/transaction/seyfert/withdraw', [
+        $result = $this->request("POST", '/v5/transaction/seyfert/withdraw', $options + [
             'dstMemGuid' => $guid,
             'amount' => $amount,
             'crrncy' => 'KRW',
+            'authType' => $authType,
         ]);
         if ($result['data']['status'] === 'SFRT_WITHDRAW_REQ_TRYING') {
             return new TransactionResult($result->toArray());
@@ -337,15 +345,18 @@ class Api
      * @param string $fromGuid
      * @param string $toGuid
      * @param int $amount
+     * @param string $authType
+     * @param array $options
      * @return \Apikr\Paygate\Seyfert\TransactionResult
      */
-    public function transferPending($fromGuid, $toGuid, $amount)
+    public function transferPending($fromGuid, $toGuid, $amount, $authType = "SMS_MO", array $options = [])
     {
-        $result = $this->request("POST", '/v5/transaction/seyfert/transferPending', [
+        $result = $this->request("POST", '/v5/transaction/seyfert/transferPending', $options + [
             'srcMemGuid' => $fromGuid,
             'dstMemGuid' => $toGuid,
             'amount' => $amount,
             'crrncy' => 'KRW',
+            'authType' => $authType,
         ]);
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_TRYING' || $result['data']['status'] === 'SFRT_TRNSFR_PND_AGRREED') {
             return new TransactionResult($result->toArray());
@@ -359,11 +370,12 @@ class Api
 
     /**
      * @param string $tid
+     * @param array $options
      * @return \Apikr\Paygate\Seyfert\TransactionResult
      */
-    public function releasePending($tid)
+    public function releasePending($tid, array $options = [])
     {
-        $result = $this->request("POST", '/v5/transaction/pending/release', [
+        $result = $this->request("POST", '/v5/transaction/pending/release', $options + [
             'parentTid' => $tid,
         ]);
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_RELEASED') {
@@ -378,11 +390,12 @@ class Api
 
     /**
      * @param string $tid
+     * @param array $options
      * @return \Apikr\Paygate\Seyfert\TransactionResult
      */
-    public function cancelPending($tid)
+    public function cancelPending($tid, array $options = [])
     {
-        $result = $this->request("POST", '/v5/transaction/seyfertTransferPending/cancel', [
+        $result = $this->request("POST", '/v5/transaction/seyfertTransferPending/cancel', $options + [
             'parentTid' => $tid,
         ]);
         if ($result['data']['status'] === 'SFRT_TRNSFR_PND_CANCELED') {
@@ -398,11 +411,12 @@ class Api
     /**
      * @param string $guid
      * @param string $bankCode
+     * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function createVirtualAccount($guid, $bankCode)
+    public function createVirtualAccount($guid, $bankCode, array $options = [])
     {
-        return $this->request("PUT", '/v5a/member/assignVirtualAccount/p2p', [
+        return $this->request("PUT", '/v5a/member/assignVirtualAccount/p2p', $options + [
             'dstMemGuid' => $guid,
             'bnkCd' => $bankCode,
         ]);
@@ -425,11 +439,12 @@ class Api
      * @param string $guid
      * @param int $page
      * @param int $limit
+     * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function seyfertList($guid, $page = 1, $limit = 10)
+    public function seyfertList($guid, $page = 1, $limit = 10, array $options = [])
     {
-        return $this->request("GET", '/v5a/admin/seyfertList', [
+        return $this->request("GET", '/v5a/admin/seyfertList', $options + [
             'dstMemGuid' => $guid,
             'page' => $page,
             'limit' => $limit,
@@ -438,11 +453,12 @@ class Api
 
     /**
      * @param array $tids
+     * @param array $options
      * @return \Apikr\Api\Result
      */
-    public function transactionDetail(array $tids = [])
+    public function transactionDetail(array $tids = [], array $options = [])
     {
-        return $this->request("GET", '/v5a/admin/transaction/detail', [
+        return $this->request("GET", '/v5a/admin/transaction/detail', $options + [
             'tidList' => implode(',', $tids),
         ]);
     }
