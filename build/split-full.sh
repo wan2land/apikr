@@ -19,12 +19,13 @@ split_parallel() {
 TAG=$1
 PIDS=()
 
-split_parallel Api              api                 "master" $TAG & PIDS+=($!)
-split_parallel Aligo/Sms        aligo-sms           "master" $TAG & PIDS+=($!)
-split_parallel ApiStore/Sms     apistore-sms        "master" $TAG & PIDS+=($!)
-split_parallel Paygate/Seyfert  paygate-seyfert     "master" $TAG & PIDS+=($!)
-split_parallel SKPlanet/TMap    skplanet-tmap       "master" $TAG & PIDS+=($!)
-split_parallel Siot/Iamport     siot-iamport        "master" $TAG & PIDS+=($!)
+split_parallel Api                api                 "master" $TAG & PIDS+=($!)
+split_parallel Aligo/Sms          aligo-sms           "master" $TAG & PIDS+=($!)
+split_parallel ApiStore/Sms       apistore-sms        "master" $TAG & PIDS+=($!)
+split_parallel Paygate/Seyfert    paygate-seyfert     "master" $TAG & PIDS+=($!)
+split_parallel SKPlanet/TMap      skplanet-tmap       "master" $TAG & PIDS+=($!)
+split_parallel SKTelecom/EventDay sktelecom-eventday  "master" $TAG & PIDS+=($!)
+split_parallel Siot/Iamport       siot-iamport        "master" $TAG & PIDS+=($!)
 
 for PID in "${PIDS[@]}"
 do
