@@ -15,6 +15,7 @@ API KR
 - [Paygate, Seyfert](src/Paygate/Seyfert/) : 핀테크 플랫폼
 - [Aligo, SMS](src/Aligo/Sms) : SMS 서비스
 - [API Store, SMS](src/ApiStore/Sms) : SMS 서비스
+- [Cool SMS, SMS](src/CoolSms/Sms) : SMS 서비스
 - [시옷, 아임포트(Iamport)](src/Siot/Iamport) : 결제 서비스
 
 ## 설치하기 (Installation)
